@@ -1,0 +1,6 @@
+{
+  "name": "Geziyorum Türkiye",
+  "description": "Türkiye genelinde rota, mekan ve deneyimleri keşfedebileceğiniz modern bir turizm dizin ve seyahat blogu konsepti.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
