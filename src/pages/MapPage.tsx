@@ -93,7 +93,7 @@ export function MapPage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="bg-gray-200 text-gray-700 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs mt-0.5">2</span>
-                İsim: <code className="bg-gray-200 px-1 py-0.5 rounded text-gray-800">GOOGLE_MAPS_PLATFORM_KEY</code> yazıp Enter yapın.
+                İsim: <code className="bg-gray-200 px-1 py-0.5 rounded text-gray-800">VITE_GOOGLE_MAPS_PLATFORM_KEY</code> yazıp Enter yapın.
               </li>
               <li className="flex items-start gap-2">
                 <span className="bg-gray-200 text-gray-700 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs mt-0.5">3</span>
