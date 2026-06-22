@@ -4,6 +4,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   alt: string;
   wrapperClassName?: string;
+  className?: string;
 }
 
 export function LazyImage({ src, alt, className = '', wrapperClassName = '', ...props }: LazyImageProps) {

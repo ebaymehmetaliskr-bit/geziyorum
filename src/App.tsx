@@ -18,7 +18,18 @@ import { getSiteSettings, SiteSettings } from './services/wp-api';
 function PublicLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>({
+    name: 'Geziyorum Türkiye',
+    description: 'Gezi Rehberi',
+    site_logo_url: 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=100&h=100&fit=crop',
+    top_links: [
+        { title: 'Destinasyonlar', url: '/destinasyon/ege-bolgesi' },
+        { title: 'Harita', url: '/harita' },
+        { title: 'Rota Planla', url: '/rota-planlayici' },
+        { title: 'Tüm Öneriler', url: '/' },
+        { title: 'Blog', url: '/blog' }
+    ]
+  });
 
   useEffect(() => {
     getSiteSettings().then(settings => {
@@ -127,7 +138,7 @@ function PublicLayout() {
 
         {/* Mobile Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 shadow-lg absolute left-0 right-0 py-4 px-4 flex flex-col gap-4">
+          <div className="md:hidden bg-white border-t border-gray-100 shadow-lg absolute top-full left-0 right-0 py-4 px-4 flex flex-col gap-4">
             {siteSettings?.top_links && siteSettings.top_links.map((link, idx) => {
               if (link.title === 'Rota Planla') {
                 return (
