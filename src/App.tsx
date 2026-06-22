@@ -169,7 +169,7 @@ function PublicLayout() {
       <SmartSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* Main Content Areas */}
-      <main className="flex-grow">
+      <main className="flex-grow pt-16">
         <Outlet />
       </main>
 
