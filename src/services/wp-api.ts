@@ -165,6 +165,90 @@ export async function getToursFromWordPress(page: number = 1): Promise<TourListi
   }
 }
 
+export interface BlogPost {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  date: string;
+  categoryName: string;
+  categorySlug: string;
+  img: string;
+}
+
+export async function getBlogPostsFromWordPress(perPage = 10, categorySlug = ''): Promise<BlogPost[]> {
+  try {
+    let url = `${WP_API_BASE}/posts?_embed&per_page=${perPage}`;
+    if (categorySlug) {
+      // Bu adımda categorySlug'dan category ID'sini bulmamız gerekebilir.
+      // Basitleştirmek adına categoySlug'i filtrelemek için fetch yaptıktan sonra da yapabiliriz.
+      // WordPress API default haliyle slug üzerinden post filtresini doğrudan desteklemez. (Taxonomy sorgusu gerekir)
+      // Biz şimdilik hepsini çekip JavaScript tarafında filtreleyelim mock amaçlı veya WordPress category araması kullanalım:
+       const catRes = await fetch(`${WP_API_BASE}/categories?slug=${categorySlug}`);
+       if (catRes.ok) {
+         const cats = await catRes.json();
+         if (cats && cats.length > 0) {
+           url += `&categories=${cats[0].id}`;
+         }
+       }
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) return [];
+
+    const posts = await response.json();
+    return posts.map((post: any) => {
+      const excerpt = post.excerpt?.rendered?.replace(/(<([^>]+)>)/gi, "") || '';
+      const img = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=800&q=80';
+      const termInfo = post._embedded?.['wp:term']?.[0]?.[0];
+      return {
+        id: post.id,
+        slug: post.slug,
+        title: post.title?.rendered,
+        excerpt: excerpt.length > 150 ? excerpt.substring(0, 150) + "..." : excerpt,
+        content: post.content?.rendered,
+        date: new Date(post.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
+        categoryName: termInfo?.name || 'Genel',
+        categorySlug: termInfo?.slug || 'genel',
+        img
+      };
+    });
+  } catch (error) {
+    console.error("WP API: Blog posts couldn't be loaded", error);
+    return [];
+  }
+}
+
+export async function getBlogPostBySlugFromWordPress(slug: string): Promise<BlogPost | null> {
+  try {
+    const response = await fetch(`${WP_API_BASE}/posts?_embed&slug=${slug}`);
+    if (!response.ok) return null;
+    const posts = await response.json();
+    if (!posts || posts.length === 0) return null;
+    
+    const post = posts[0];
+    const excerpt = post.excerpt?.rendered?.replace(/(<([^>]+)>)/gi, "") || '';
+    const img = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=1600&q=80';
+    const termInfo = post._embedded?.['wp:term']?.[0]?.[0];
+
+    return {
+      id: post.id,
+      slug: post.slug,
+      title: post.title?.rendered,
+      excerpt,
+      content: post.content?.rendered,
+      date: new Date(post.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
+      categoryName: termInfo?.name || 'Genel',
+      categorySlug: termInfo?.slug || 'genel',
+      img
+    };
+  } catch (error) {
+    console.error("WP API: Blog post couldn't be loaded", error);
+    return null;
+  }
+}
+
 export async function getTourByIdFromWordPress(id: string): Promise<TourListing | null> {
 
   try {

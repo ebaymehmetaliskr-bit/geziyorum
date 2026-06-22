@@ -2,6 +2,8 @@ import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, Calendar, ArrowRight, Rss, TrendingUp } from 'lucide-react';
 import { LazyImage } from '../components/LazyImage';
 import { NewsletterSubscription } from '../components/NewsletterSubscription';
+import { useEffect, useState } from 'react';
+import { getBlogPostsFromWordPress, BlogPost } from '../services/wp-api';
 
 const CATEGORIES = [
   { id: 'all', name: 'Tüm Yazılar', slug: '' },
@@ -11,77 +13,29 @@ const CATEGORIES = [
   { id: 'rotalar', name: 'Gizli Rotalar', slug: 'gizli-rotalar' },
 ];
 
-const MOCK_POSTS = [
-  {
-    id: 1,
-    title: 'Kapadokya\'da Balon Turu: Bilmeniz Gereken Her Şey',
-    excerpt: 'Hayatınızda bir kez yapacağınız bu harika deneyim öncesi biletinizi alırken nelere dikkat etmelisiniz?',
-    img: 'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?auto=format&fit=crop&w=800&q=80',
-    categorySlug: 'gezi-rehberi',
-    categoryName: 'Gezi Rehberi',
-    date: '12 Ağustos 2024',
-    slug: 'kapadokya-balon-turu-rehberi'
-  },
-  {
-    id: 2,
-    title: 'Ege\'nin Maldivleri: Kalem Adası',
-    excerpt: 'İzmir Dikili açıklarındaki bu gizli cennet, henüz keşfedilmemiş yerli turistler için harika bir hafta sonu kaçamağı.',
-    img: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80',
-    categorySlug: 'gizli-rotalar',
-    categoryName: 'Gizli Rotalar',
-    date: '5 Ağustos 2024',
-    slug: 'ege-maldivleri-kalem-adasi'
-  },
-  {
-    id: 3,
-    title: 'Fethiye\'de Nerede Kalınır? En İyi 5 Butik Otel',
-    excerpt: 'Deniz manzaralı, doğa ile iç içe ve sakin bir tatil arayanlar için fiyat/performans açısından en iyi butik oteller.',
-    img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-    categorySlug: 'konaklama',
-    categoryName: 'Otel & Konaklama',
-    date: '28 Temmuz 2024',
-    slug: 'fethiye-butik-otel-tavsiyeleri'
-  },
-  {
-    id: 4,
-    title: 'Bodrum Akşamlarının Vazgeçilmezi: 10 En İyi Balıkçı',
-    excerpt: 'Taze deniz ürünleri ve harika Ege mezelerini denemek için rotanızı çevirmeniz gereken en popüler yerel restoranlar.',
-    img: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=800&q=80',
-    categorySlug: 'yeme-icme',
-    categoryName: 'Yeme & İçme',
-    date: '15 Temmuz 2024',
-    slug: 'bodrum-en-iyi-balik-restoranlari'
-  },
-  {
-    id: 5,
-    title: 'Kazdağları Kamp Rehberi ve Doğaya Dönüş',
-    excerpt: 'Bol oksijen, doğa ile baş başa bir deneyim. Kazdağları eteklerinde çadırınızı kurabileceğiniz en iyi kamp alanları.',
-    img: 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?auto=format&fit=crop&w=800&q=80',
-    categorySlug: 'gezi-rehberi',
-    categoryName: 'Gezi Rehberi',
-    date: '10 Temmuz 2024',
-    slug: 'kazdaglari-kamp-rehberi'
-  },
-  {
-    id: 6,
-    title: 'Balkanlarda Vizesiz Rota: Saraybosna\'dan Belgrad\'a',
-    excerpt: 'Hem ekonomik hem de vizesiz! Araba kiralayarak yapabileceğiniz enfes bir Balkanlar seyahat rotası planlıyoruz.',
-    img: 'https://images.unsplash.com/photo-1613524458514-419b139deae2?auto=format&fit=crop&w=800&q=80',
-    categorySlug: 'rotalar',
-    categoryName: 'Gizli Rotalar',
-    date: '1 Temmuz 2024',
-    slug: 'balkanlar-vizesiz-rota-rehberi'
-  }
-];
-
 export function BlogCategoryPage() {
   const { categorySlug } = useParams<{ categorySlug: string }>();
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [popularPosts, setPopularPosts] = useState<BlogPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const activeCategory = CATEGORIES.find(c => c.slug === categorySlug) || CATEGORIES[0];
-  
-  const filteredPosts = categorySlug 
-    ? MOCK_POSTS.filter(post => post.categorySlug === categorySlug)
-    : MOCK_POSTS;
+
+  useEffect(() => {
+    async function loadPosts() {
+      setIsLoading(true);
+      const fetchedPosts = await getBlogPostsFromWordPress(10, categorySlug || '');
+      setPosts(fetchedPosts);
+      
+      // Load popular posts only once if not loaded
+      if (popularPosts.length === 0) {
+        const top = await getBlogPostsFromWordPress(4, '');
+        setPopularPosts(top);
+      }
+      setIsLoading(false);
+    }
+    loadPosts();
+  }, [categorySlug]);
 
   return (
     <div className="pt-20 bg-gray-50/50 min-h-screen">
@@ -145,9 +99,13 @@ export function BlogCategoryPage() {
           
           {/* Main Content (Post Grid) */}
           <div className="lg:w-2/3">
-            {filteredPosts.length > 0 ? (
+            {isLoading ? (
+               <div className="flex items-center justify-center py-20">
+                 <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+               </div>
+            ) : posts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {filteredPosts.map(post => (
+                {posts.map(post => (
                   <Link to={`/blog/${post.slug}`} key={post.id} className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
                     <div className="aspect-[4/3] w-full bg-gray-100 relative overflow-hidden">
                       <LazyImage src={post.img} alt={post.title} wrapperClassName="w-full h-full" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -189,7 +147,7 @@ export function BlogCategoryPage() {
             )}
 
             {/* Pagination Mock */}
-            {filteredPosts.length > 0 && (
+            {!isLoading && posts.length > 0 && (
               <div className="mt-12 flex justify-center">
                 <div className="flex items-center gap-2">
                   <button className="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 cursor-not-allowed">
@@ -226,7 +184,7 @@ export function BlogCategoryPage() {
               </div>
               
               <div className="space-y-6">
-                {MOCK_POSTS.slice(0,4).map((post, i) => (
+                {popularPosts.map((post, i) => (
                   <Link key={i} to={`/blog/${post.slug}`} className="flex gap-4 group">
                     <span className="text-3xl font-extrabold text-gray-200 group-hover:text-orange-500 transition-colors shrink-0">
                       0{i + 1}

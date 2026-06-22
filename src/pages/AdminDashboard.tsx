@@ -15,12 +15,23 @@ import {
   AlertCircle,
   Search
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LazyImage } from '../components/LazyImage';
+import { AdminAuth } from '../components/AdminAuth';
+import { auth } from '../lib/firebase';
+import { signOut } from 'firebase/auth';
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('settings');
   const [isSyncing, setIsSyncing] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/');
+    } catch(e) {}
+  };
 
   const [isSavingSeo, setIsSavingSeo] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -146,10 +157,11 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex font-sans text-gray-900">
-      
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-gray-300 min-h-screen flex flex-col shrink-0">
+    <AdminAuth>
+      <div className="min-h-screen bg-gray-50 flex font-sans text-gray-900">
+        
+        {/* Sidebar */}
+        <aside className="w-64 bg-gray-900 text-gray-300 min-h-screen flex flex-col shrink-0">
         <div className="h-16 flex items-center px-6 border-b border-gray-800">
           <Link to="/" className="text-white font-bold text-xl tracking-tight flex items-center gap-2">
             <MapPin className="w-5 h-5 text-orange-500" />
@@ -206,10 +218,13 @@ export function AdminDashboard() {
               <Settings className="w-5 h-5" />
               Genel Ayarlar
             </button>
-            <Link to="/" className="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium hover:bg-red-500/10 hover:text-red-400 transition-colors text-gray-400">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium hover:bg-red-500/10 hover:text-red-400 transition-colors text-gray-400"
+            >
               <LogOut className="w-5 h-5" />
               Çıkış Yap
-            </Link>
+            </button>
           </nav>
         </div>
         
@@ -834,5 +849,6 @@ export function AdminDashboard() {
       </main>
 
     </div>
+    </AdminAuth>
   );
 }
