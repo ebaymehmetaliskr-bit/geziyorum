@@ -30,7 +30,7 @@ export function BlogDetailPage() {
   useEffect(() => {
     if (!isLoading && post && articleRef.current) {
       // Create TOC
-      const elements = Array.from(articleRef.current.querySelectorAll('h2, h3'));
+      const elements = Array.from(articleRef.current.querySelectorAll('h2, h3')) as HTMLElement[];
       const parsedHeadings = elements.map((el, index) => {
         let id = el.id;
         if (!id) {

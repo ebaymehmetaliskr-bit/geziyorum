@@ -12,7 +12,7 @@ const API_KEY =
   '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
-function TourMarker({ tour }: { tour: TourListing }) {
+const TourMarker: React.FC<{ tour: TourListing }> = ({ tour }) => {
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [open, setOpen] = useState(false);
 

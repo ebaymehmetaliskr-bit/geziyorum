@@ -1,7 +1,7 @@
 import { TourListing } from '../types';
 import { TOUR_LISTINGS } from '../data';
 
-const WP_URL = import.meta.env.VITE_WP_API_URL || 'https://www.geziyorumturkiye.com';
+const WP_URL = (import.meta as any).env.VITE_WP_API_URL || 'https://www.geziyorumturkiye.com';
 const WP_API_BASE = `${WP_URL}/wp-json/wp/v2`;
 
 export interface SiteSettings {

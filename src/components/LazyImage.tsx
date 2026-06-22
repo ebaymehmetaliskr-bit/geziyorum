@@ -7,7 +7,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   className?: string;
 }
 
-export function LazyImage({ src, alt, className = '', wrapperClassName = '', ...props }: LazyImageProps) {
+export const LazyImage: React.FC<LazyImageProps> = ({ src, alt, className = '', wrapperClassName = '', ...props }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
 

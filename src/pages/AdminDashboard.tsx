@@ -103,7 +103,7 @@ export function AdminDashboard() {
   const loadSeoItems = async () => {
     setIsLoadingSeo(true);
     try {
-      const WP_URL = import.meta.env.VITE_WP_API_URL || 'https://www.geziyorumturkiye.com';
+      const WP_URL = (import.meta as any).env.VITE_WP_API_URL || 'https://www.geziyorumturkiye.com';
       const res = await fetch(`${WP_URL}/wp-json/wp/v2/posts?per_page=15`);
       if (res.ok) {
         const data = await res.json();

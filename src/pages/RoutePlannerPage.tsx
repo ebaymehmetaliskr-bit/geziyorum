@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MapPin, GripVertical, Navigation, Trash2, Plus, ArrowRight, Save, Clock, Search, Banknote } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getToursFromWordPress } from '../services/wp-api';
