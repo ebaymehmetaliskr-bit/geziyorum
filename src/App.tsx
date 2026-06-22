@@ -9,8 +9,10 @@ import { BlogCategoryPage } from './pages/BlogCategoryPage';
 import { MapPage } from './pages/MapPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { RoutePlannerPage } from './pages/RoutePlannerPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { SmartSearchModal } from './components/SmartSearchModal';
 import { Footer } from './components/Footer';
+import { UserMenu } from './components/UserMenu';
 import { getSiteSettings, SiteSettings } from './services/wp-api';
 
 function PublicLayout() {
@@ -97,6 +99,8 @@ function PublicLayout() {
                 </kbd>
               </button>
 
+              <UserMenu />
+
               <Link to="/admin" className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-all text-sm font-medium">
                 Admin
               </Link>
@@ -140,6 +144,9 @@ function PublicLayout() {
               );
             })}
             <div className="border-t border-gray-100 pt-4 mt-2">
+              <div className="flex justify-center mb-4">
+                <UserMenu />
+              </div>
               <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-all font-medium">
                 Admin Paneli
               </Link>
@@ -173,6 +180,7 @@ export default function App() {
         <Route path="/blog" element={<BlogCategoryPage />} />
         <Route path="/blog/kategori/:categorySlug" element={<BlogCategoryPage />} />
         <Route path="/blog/:slug" element={<BlogDetailPage />} />
+        <Route path="/profil/*" element={<ProfilePage />} />
       </Route>
       
       <Route path="/admin/*" element={<AdminDashboard />} />

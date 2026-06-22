@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function existing() { return resource.data; }
+    function incoming() { return request.resource.data; }
+    function isVerifiedEmail() { return true; } // Not strictly enforcing email verification for simple prototype
+
+    // Users
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId)
+                    && incoming().keys().hasAll(['email'])
+                    && incoming().keys().size() <= 3;
+      allow update: if isOwner(userId)
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['updatedAt']);
+      allow delete: if false;
+
+      // Favorites
+      match /favorites/{favoriteId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId)
+                      && isValidId(favoriteId)
+                      && incoming().keys().hasAll(['tourId', 'createdAt'])
+                      && incoming().keys().size() == 2
+                      && incoming().tourId is string && incoming().tourId.size() <= 128
+                      && incoming().createdAt is timestamp;
+        allow update: if false;
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // Bookings
+    match /bookings/{bookingId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn()
+                    && isValidId(bookingId)
+                    && incoming().keys().hasAll(['tourId', 'tourName', 'date', 'guests', 'status', 'userId', 'totalPrice', 'createdAt'])
+                    && incoming().keys().size() == 8
+                    && incoming().tourId is string && incoming().tourId.size() <= 128
+                    && incoming().tourName is string && incoming().tourName.size() <= 128
+                    && incoming().date is string && incoming().date.size() <= 64
+                    && incoming().guests is number && incoming().guests >= 1 && incoming().guests <= 50
+                    && incoming().status is string && incoming().status == 'pending'
+                    && incoming().userId == request.auth.uid
+                    && incoming().totalPrice is number && incoming().totalPrice >= 0
+                    && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Reviews
+    match /reviews/{reviewId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn()
+                    && isValidId(reviewId)
+                    && incoming().keys().hasAll(['tourId', 'userId', 'userName', 'rating', 'comment', 'createdAt'])
+                    && incoming().keys().size() == 6
+                    && incoming().tourId is string && incoming().tourId.size() <= 128
+                    && incoming().userId == request.auth.uid
+                    && incoming().userName is string && incoming().userName.size() <= 64
+                    && incoming().rating is number && incoming().rating >= 1 && incoming().rating <= 5
+                    && incoming().comment is string && incoming().comment.size() <= 2000
+                    && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

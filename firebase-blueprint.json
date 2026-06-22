@@ -1,4 +1,72 @@
 {
   "$schema": "https://aistudio.google.com/schema/firebase-blueprint.json",
-  "collections": {}
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "User's favorite tour",
+      "type": "object",
+      "properties": {
+        "tourId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tourId", "createdAt"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Booking for a tour",
+      "type": "object",
+      "properties": {
+        "tourId": { "type": "string" },
+        "tourName": { "type": "string" },
+        "date": { "type": "string" },
+        "guests": { "type": "number" },
+        "status": { "type": "string" },
+        "userId": { "type": "string" },
+        "totalPrice": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tourId", "date", "guests", "status", "userId", "totalPrice", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Tour review",
+      "type": "object",
+      "properties": {
+        "tourId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tourId", "userId", "userName", "rating", "comment", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Users"
+    },
+    "users/{userId}/favorites/{favoriteId}": {
+      "schema": { "$ref": "#/entities/Favorite" },
+      "description": "User's favorite tours"
+    },
+    "bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "All bookings"
+    },
+    "reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "All reviews"
+    }
+  }
 }

@@ -1,8 +1,13 @@
 import { LazyImage } from './LazyImage';
 import { TourListing } from '../types';
-import { MapPin, Star, Share, Heart, Clock, Users, Map, ChevronDown } from 'lucide-react';
+import { MapPin, Star, Share, Heart, Clock, Users, Map, ChevronDown, Calendar, ArrowRight } from 'lucide-react';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin, InfoWindow, useAdvancedMarkerRef, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { doc, getDoc, setDoc, deleteDoc, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { format, addDays } from 'date-fns';
+import { tr } from 'date-fns/locale';
 
 const API_KEY =
   process.env.GOOGLE_MAPS_PLATFORM_KEY ||
@@ -125,6 +130,141 @@ interface SingleListingLayoutProps {
 }
 
 export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProps) {
+  const { user, signInWithGoogle } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  
+  // Booking State
+  const [date, setDate] = useState<string>(format(addDays(new Date(), 2), 'yyyy-MM-dd'));
+  const [guests, setGuests] = useState(2);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  // Reviews State
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [newReview, setNewReview] = useState('');
+  const [newRating, setNewRating] = useState(5);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  // Check Favorite Status
+  useEffect(() => {
+    if (!user) {
+      setIsFavorite(false);
+      return;
+    }
+    const checkFav = async () => {
+      try {
+        const favRef = doc(db, 'users', user.uid, 'favorites', listing.id);
+        const favSnap = await getDoc(favRef);
+        setIsFavorite(favSnap.exists());
+      } catch (e) {
+        console.error('Failed to fetch fav', e);
+      }
+    };
+    checkFav();
+  }, [user, listing.id]);
+
+  // Fetch Reviews
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const q = query(
+          collection(db, 'reviews'), 
+          where('tourId', '==', listing.id)
+        );
+        const querySnapshot = await getDocs(q);
+        const fetchedReviews = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // simple sort by date client-side since ordering with where needs composite index sometimes
+        fetchedReviews.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis() || 0);
+        setReviews(fetchedReviews);
+      } catch (e) {
+        console.error('Failed to fetch reviews', e);
+      }
+    };
+    fetchReviews();
+  }, [listing.id]);
+
+  const toggleFavorite = async () => {
+    if (!user) {
+      signInWithGoogle();
+      return;
+    }
+    setIsFavoriteLoading(true);
+    try {
+      const favRef = doc(db, 'users', user.uid, 'favorites', listing.id);
+      if (isFavorite) {
+        await deleteDoc(favRef);
+        setIsFavorite(false);
+      } else {
+        await setDoc(favRef, {
+          tourId: listing.id,
+          createdAt: serverTimestamp()
+        });
+        setIsFavorite(true);
+      }
+    } catch (e) {
+      console.error('Toggle favorite failed', e);
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
+
+  const handleBooking = async () => {
+    if (!user) {
+      signInWithGoogle();
+      return;
+    }
+    setIsBooking(true);
+    try {
+      await addDoc(collection(db, 'bookings'), {
+        tourId: listing.id,
+        tourName: listing.title,
+        date: date,
+        guests: guests,
+        status: 'pending',
+        userId: user.uid,
+        totalPrice: listing.price * guests,
+        createdAt: serverTimestamp()
+      });
+      setBookingSuccess(true);
+      setTimeout(() => setBookingSuccess(false), 5000);
+    } catch (e) {
+      console.error('Booking failed', e);
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      signInWithGoogle();
+      return;
+    }
+    if (!newReview.trim()) return;
+    
+    setIsSubmittingReview(true);
+    try {
+      const reviewDoc = {
+        tourId: listing.id,
+        userId: user.uid,
+        userName: user.displayName || 'Anonim Misafir',
+        rating: newRating,
+        comment: newReview,
+        createdAt: serverTimestamp()
+      };
+      
+      const docRef = await addDoc(collection(db, 'reviews'), reviewDoc);
+      setReviews([{ id: docRef.id, ...reviewDoc, createdAt: { toMillis: () => Date.now() } }, ...reviews]);
+      setNewReview('');
+      setNewRating(5);
+    } catch (e) {
+      console.error('Submit review failed', e);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
   // Placeholder gallery images
   const gallery = [
     listing.featured_image,
@@ -163,8 +303,12 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
             <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-sm border border-gray-200/0 hover:border-gray-200">
               <Share className="w-4 h-4" /> Paylaş
             </button>
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-sm border border-gray-200/0 hover:border-gray-200">
-              <Heart className="w-4 h-4" /> Kaydet
+            <button 
+              onClick={toggleFavorite}
+              disabled={isFavoriteLoading}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-semibold text-sm border border-gray-200/0 hover:border-gray-200 ${isFavorite ? 'text-orange-600 bg-orange-50' : 'hover:bg-gray-100 text-gray-700'}`}
+            >
+              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-orange-500 text-orange-500' : ''}`} /> Kaydet
             </button>
           </div>
         </div>
@@ -300,7 +444,7 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
                  </div>
                  <div>
                    <h2 className="text-2xl font-bold text-gray-900">Kullanıcı Değerlendirmeleri</h2>
-                   <p className="text-gray-500 font-medium">128 Doğrulanmış Misafir Yorumu</p>
+                   <p className="text-gray-500 font-medium">{reviews.length} Doğrulanmış Misafir Yorumu</p>
                  </div>
                </div>
 
@@ -324,43 +468,82 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
                  ))}
                </div>
 
-               {/* Mock Comments */}
+               {/* New Review Form */}
+               {user ? (
+                 <form onSubmit={submitReview} className="mb-10 bg-gray-50 border border-gray-100 p-6 rounded-2xl">
+                   <h3 className="font-bold text-gray-900 mb-4">Deneyiminizi Paylaşın</h3>
+                   <div className="mb-4">
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Puanınız</label>
+                     <div className="flex gap-2">
+                       {[1, 2, 3, 4, 5].map((star) => (
+                         <button
+                           type="button"
+                           key={star}
+                           onClick={() => setNewRating(star)}
+                           className={`p-1 rounded-full hover:bg-gray-200 transition-colors ${newRating >= star ? 'text-orange-500' : 'text-gray-300'}`}
+                         >
+                           <Star className="w-6 h-6 fill-current" />
+                         </button>
+                       ))}
+                     </div>
+                   </div>
+                   <div className="mb-4">
+                     <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">Yorumunuz</label>
+                     <textarea
+                       id="comment"
+                       rows={4}
+                       value={newReview}
+                       onChange={(e) => setNewReview(e.target.value)}
+                       className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                       placeholder="Tur hakkında ne düşünüyorsunuz?"
+                       required
+                     />
+                   </div>
+                   <button
+                     type="submit"
+                     disabled={isSubmittingReview || !newReview.trim()}
+                     className="px-6 py-2.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                   >
+                     {isSubmittingReview ? 'Gönderiliyor...' : 'Yorumu Gönder'}
+                   </button>
+                 </form>
+               ) : (
+                 <div className="mb-10 bg-orange-50 border border-orange-100 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                   <p className="text-gray-800 font-medium">Bu tura yorum yapmak için giriş yapmalısınız.</p>
+                   <button onClick={signInWithGoogle} className="px-6 py-2 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-colors whitespace-nowrap">
+                     Giriş Yap
+                   </button>
+                 </div>
+               )}
+
+               {/* Comments List */}
                <div className="space-y-6">
-                 {[
-                   {
-                     name: 'Ayşe Yılmaz',
-                     date: 'Geçen Ay',
-                     comment: 'Harika bir deneyimdi. Özellikle rehberimizin bilgisi ve anlattığı hikayeler turu çok daha keyifli kıldı. Konakladığımız otelin manzarası da tek kelimeyle efsaneydi.',
-                     avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d'
-                   },
-                   {
-                     name: 'Caner K.',
-                     date: '2 Ay Önce',
-                     comment: 'Eşimle birlikte katıldık ve her anından çok keyif aldık. Fiyatına göre sunduğu olanaklar gerçekten tatmin edici. Fotoğraf çekimi için gittiğimiz koylara bayıldık. Kesinlikle tavsiye ediyoruz!',
-                     avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d'
-                   }
-                 ].map((review, idx) => (
-                   <div key={idx} className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm">
+                 {reviews.length > 0 ? reviews.map((review) => (
+                   <div key={review.id} className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm">
                      <div className="flex items-start gap-4 mb-3">
-                       <LazyImage src={review.avatar} alt={review.name} wrapperClassName="w-12 h-12 rounded-full border border-gray-200 shrink-0" className="w-full h-full object-cover rounded-full" />
+                       <div className="w-12 h-12 rounded-full bg-gray-200 shrink-0 flex items-center justify-center font-bold text-gray-500 text-lg">
+                         {(review.userName || 'A').charAt(0).toUpperCase()}
+                       </div>
                        <div className="flex-1">
-                         <div className="font-bold text-gray-900">{review.name}</div>
-                         <div className="text-sm text-gray-500">{review.date}</div>
+                         <div className="font-bold text-gray-900">{review.userName || 'Anonim'}</div>
+                         <div className="text-sm text-gray-500">
+                           {review.createdAt ? new Date(review.createdAt.toMillis ? review.createdAt.toMillis() : Date.now()).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Yakın Zamanda'}
+                         </div>
                        </div>
                        <div className="flex gap-1 text-orange-500">
                          {Array.from({ length: 5 }).map((_, i) => (
-                           <Star key={i} className="w-4 h-4 fill-current" />
+                           <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'fill-current' : 'text-gray-300'}`} />
                          ))}
                        </div>
                      </div>
                      <p className="text-gray-600 leading-relaxed">{review.comment}</p>
                    </div>
-                 ))}
+                 )) : (
+                   <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-2xl border border-gray-100">
+                     Henüz yorum yapılmamış. İlk yorumu siz yapın!
+                   </div>
+                 )}
                </div>
-               
-               <button className="mt-8 w-full py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-900 font-bold rounded-xl transition-colors">
-                 Tüm Yorumları Gör (128)
-               </button>
             </section>
 
           </div>
@@ -382,61 +565,70 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
 
               {/* Date & Guests Picker */}
               <div className="border border-gray-300 rounded-xl overflow-hidden mb-6">
-                <div className="flex border-b border-gray-300">
-                  <div className="flex-1 p-3 border-r border-gray-300 hover:bg-gray-50 cursor-pointer transition-colors group">
-                    <div className="text-[11px] font-bold text-gray-900 uppercase tracking-widest mb-1">Giriş</div>
-                    <div className="text-gray-500 text-sm group-hover:text-gray-900 transition-colors">Tarih Seçin</div>
-                  </div>
-                  <div className="flex-1 p-3 hover:bg-gray-50 cursor-pointer transition-colors group">
-                    <div className="text-[11px] font-bold text-gray-900 uppercase tracking-widest mb-1">Çıkış</div>
-                    <div className="text-gray-500 text-sm group-hover:text-gray-900 transition-colors">Tarih Seçin</div>
-                  </div>
+                <div className="p-3 border-b border-gray-300 hover:bg-gray-50 transition-colors">
+                  <div className="text-[11px] font-bold text-gray-900 uppercase tracking-widest mb-1">Tur Tarihi</div>
+                  <input 
+                    type="date" 
+                    value={date} 
+                    onChange={e => setDate(e.target.value)}
+                    min={format(new Date(), 'yyyy-MM-dd')}
+                    className="w-full bg-transparent text-sm text-gray-900 focus:outline-none"
+                  />
                 </div>
-                <div className="p-3 hover:bg-gray-50 cursor-pointer transition-colors flex justify-between items-center">
+                <div className="p-3 hover:bg-gray-50 transition-colors flex justify-between items-center">
                   <div>
-                    <div className="text-[11px] font-bold text-gray-900 uppercase tracking-widest mb-1">Misafirler</div>
-                    <div className="text-gray-900 text-sm">1 Yetişkin</div>
+                    <div className="text-[11px] font-bold text-gray-900 uppercase tracking-widest mb-1">Misafir Sayısı</div>
+                    <div className="flex items-center gap-3 mt-1">
+                      <button 
+                        onClick={() => setGuests(Math.max(1, guests - 1))}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                      >-</button>
+                      <span className="text-gray-900 font-medium w-4 text-center">{guests}</span>
+                      <button 
+                        onClick={() => setGuests(Math.min(50, guests + 1))}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                      >+</button>
+                    </div>
                   </div>
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                  <Users className="w-5 h-5 text-gray-400" />
                 </div>
               </div>
 
               {/* Action Button */}
-              {listing.affiliate_link ? (
-                <a 
-                  href={listing.affiliate_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg py-4 rounded-xl transition-colors shadow-lg shadow-orange-500/30 mb-4 flex items-center justify-center text-center"
-                >
-                  Partner Sitesinde İncele
-                </a>
+              {bookingSuccess ? (
+                 <div className="w-full bg-green-50 text-green-700 font-bold border border-green-200 p-4 rounded-xl text-center mb-4">
+                   Rezervasyon Talebiniz Alındı! ✨
+                 </div>
               ) : (
-                <button className="w-full bg-gray-300 cursor-not-allowed text-gray-600 font-bold text-lg py-4 rounded-xl transition-colors mb-4">
-                  Rezervasyon Kapalı
-                </button>
+                 <button 
+                   onClick={handleBooking}
+                   disabled={isBooking}
+                   className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg py-4 rounded-xl transition-colors shadow-lg shadow-orange-500/30 mb-4 flex items-center justify-center disabled:opacity-50"
+                 >
+                   {isBooking ? 'İşleniyor...' : (user ? 'Rezervasyon Yap' : 'Giriş Yap ve Rezervasyon Yap')}
+                 </button>
               )}
 
               <div className="text-center text-sm text-gray-500 font-medium mb-6">
-                Sizi güvenilir partner platformuna yönlendireceğiz.
+                Ön ödeme alınmayacaktır. İptal ücretsizdir.
               </div>
 
               {/* Price Breakdown */}
               <div className="space-y-3 text-gray-600 border-b border-gray-200 pb-5 mb-5 text-sm">
                 <div className="flex justify-between">
-                  <span className="underline underline-offset-4 cursor-pointer">₺{listing.price_try} x 1 yetişkin</span>
-                  <span>₺{listing.price_try}</span>
+                  <span className="underline underline-offset-4 cursor-pointer">₺{listing.price_try} x {guests} yetişkin</span>
+                  <span>₺{listing.price_try * guests}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="underline underline-offset-4 cursor-pointer">Rehberlik & Servis Bedeli</span>
-                  <span>₺{Math.round(listing.price_try * 0.1)}</span>
+                  <span>₺{Math.round(listing.price_try * guests * 0.1)}</span>
                 </div>
               </div>
 
               {/* Total */}
               <div className="flex justify-between items-center font-extrabold text-lg text-gray-900">
                 <span>Toplam (TRY)</span>
-                <span>₺{listing.price_try + Math.round(listing.price_try * 0.1)}</span>
+                <span>₺{(listing.price_try * guests) + Math.round(listing.price_try * guests * 0.1)}</span>
               </div>
             </div>
 
