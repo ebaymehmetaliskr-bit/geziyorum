@@ -1,6 +1,6 @@
 import { LazyImage } from './LazyImage';
 import { TourListing } from '../types';
-import { MapPin, Star, Share, Heart, Clock, Users, Map, ChevronDown, Calendar, ArrowRight } from 'lucide-react';
+import { MapPin, Star, Share, Heart, Clock, Users, Map, ChevronDown, Calendar, ArrowRight, Facebook, Twitter, Link as LinkIcon, X, Check } from 'lucide-react';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin, InfoWindow, useAdvancedMarkerRef, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
@@ -145,6 +145,22 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
   const [newReview, setNewReview] = useState('');
   const [newRating, setNewRating] = useState(5);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  // Share State
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const shareUrls = {
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(listing.title)}`,
+    whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(listing.title + ' ' + window.location.href)}`
+  };
 
   // Check Favorite Status
   useEffect(() => {
@@ -300,9 +316,47 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
             </div>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-sm border border-gray-200/0 hover:border-gray-200">
-              <Share className="w-4 h-4" /> Paylaş
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setIsShareModalOpen(!isShareModalOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-sm border border-gray-200/0 hover:border-gray-200"
+              >
+                <Share className="w-4 h-4" /> Paylaş
+              </button>
+              
+              {isShareModalOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
+                   <div className="flex justify-between items-center mb-4">
+                     <h3 className="font-bold text-gray-900">Bu ilanı paylaş</h3>
+                     <button onClick={() => setIsShareModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                       <X className="w-5 h-5" />
+                     </button>
+                   </div>
+                   <div className="grid grid-cols-4 gap-2 mb-4">
+                     <a href={shareUrls.facebook} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                       <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><Facebook className="w-5 h-5" /></div>
+                       <span className="text-[10px] font-medium text-gray-500">Facebook</span>
+                     </a>
+                     <a href={shareUrls.twitter} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                       <div className="w-10 h-10 rounded-full bg-sky-50 text-sky-500 flex items-center justify-center"><Twitter className="w-5 h-5" /></div>
+                       <span className="text-[10px] font-medium text-gray-500">Twitter</span>
+                     </a>
+                     <a href={shareUrls.whatsapp} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                       <div className="w-10 h-10 rounded-full bg-green-50 text-green-500 flex items-center justify-center">
+                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                       </div>
+                       <span className="text-[10px] font-medium text-gray-500">WhatsApp</span>
+                     </a>
+                     <button onClick={handleCopyLink} className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                       <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
+                         {copiedLink ? <Check className="w-5 h-5 text-green-600" /> : <LinkIcon className="w-5 h-5" />}
+                       </div>
+                       <span className="text-[10px] font-medium text-gray-500">{copiedLink ? 'Kopyalandı' : 'Bağlantı'}</span>
+                     </button>
+                   </div>
+                </div>
+              )}
+            </div>
             <button 
               onClick={toggleFavorite}
               disabled={isFavoriteLoading}

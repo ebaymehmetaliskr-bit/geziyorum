@@ -214,14 +214,20 @@ export function BlogDetailPage() {
         {/* Social Sharing & Footer Area */}
         <div className="max-w-4xl mt-16 pt-8 border-t border-gray-100 flex flex-col items-center">
           <h4 className="font-bold text-gray-900 mb-4">Bu yazıyı faydalı buldun mu? Paylaş:</h4>
-          <div className="flex gap-4">
-            <button className="p-3 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors">
+          <div className="flex flex-wrap justify-center gap-4">
+            <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors">
               <Facebook className="w-5 h-5" />
-            </button>
-            <button className="p-3 bg-sky-50 text-sky-600 rounded-full hover:bg-sky-100 transition-colors">
+            </a>
+            <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(post.title)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-sky-50 text-sky-600 rounded-full hover:bg-sky-100 transition-colors">
               <Twitter className="w-5 h-5" />
-            </button>
-            <button className="p-3 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
+            </a>
+            <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(post.title + ' ' + window.location.href)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-colors">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            </a>
+            <button onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              alert('Bağlantı kopyalandı!');
+            }} className="p-3 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
               <Share2 className="w-5 h-5" />
             </button>
           </div>
