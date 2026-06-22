@@ -41,6 +41,7 @@ function TourMarker({ tour }: { tour: TourListing }) {
                 src={tour.featured_image} 
                 alt={tour.title}
                 className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
               />
               <div className="absolute top-2 right-2 bg-white text-gray-900 px-2 py-0.5 rounded text-xs font-bold shadow-sm">
                 ₺{tour.price_try}

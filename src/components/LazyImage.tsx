@@ -29,6 +29,7 @@ export function LazyImage({ src, alt, className = '', wrapperClassName = '', ...
         src={src}
         alt={alt}
         loading="lazy"
+        referrerPolicy="no-referrer"
         onLoad={() => setIsLoaded(true)}
         onError={() => {
           setIsLoaded(true);

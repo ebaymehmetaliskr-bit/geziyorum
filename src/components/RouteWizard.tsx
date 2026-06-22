@@ -181,7 +181,7 @@ export function RouteWizard() {
           <div className="animate-in fade-in zoom-in-95 duration-500">
              <div className="bg-gray-50 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center border border-gray-100">
                <div className="w-full md:w-1/3 aspect-square rounded-2xl overflow-hidden shrink-0 shadow-sm relative group">
-                 <img src={routeResult.img} alt={routeResult.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                 <img src={routeResult.img} alt={routeResult.title} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                </div>
                <div className="flex-1 text-center md:text-left">
                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-widest rounded-full mb-4">

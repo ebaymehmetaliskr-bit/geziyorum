@@ -22,7 +22,7 @@ export function Footer() {
           <div className="col-span-1 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
               {siteSettings?.site_logo_url ? (
-                <img src={siteSettings.site_logo_url} alt="Logo" className="h-8 w-auto object-contain" />
+                <img src={siteSettings.site_logo_url} alt="Logo" referrerPolicy="no-referrer" className="h-8 w-auto object-contain" />
               ) : (
                 <>
                   <Compass className="w-8 h-8 text-orange-500" />

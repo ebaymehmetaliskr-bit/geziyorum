@@ -141,6 +141,7 @@ export function RoutePlannerPage() {
                             src={item.featured_image || "https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=100&h=100&fit=crop"} 
                             alt={item.title}
                             className="w-16 h-16 rounded-lg object-cover shrink-0" 
+                            referrerPolicy="no-referrer"
                           />
                           <div>
                             <h3 className="font-semibold text-gray-900 truncate">{item.title}</h3>
@@ -208,6 +209,7 @@ export function RoutePlannerPage() {
                       src={tour.featured_image || "https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=80&h=80&fit=crop"} 
                       alt={tour.title}
                       className="w-12 h-12 rounded-lg object-cover shrink-0" 
+                      referrerPolicy="no-referrer"
                     />
                     <div className="flex-grow min-w-0">
                       <h4 className="font-semibold text-sm text-gray-900 truncate leading-tight">{tour.title}</h4>
