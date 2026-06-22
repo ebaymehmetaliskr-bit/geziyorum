@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Settings, 
@@ -19,19 +19,130 @@ import { Link } from 'react-router-dom';
 import { LazyImage } from '../components/LazyImage';
 
 export function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('settings');
   const [isSyncing, setIsSyncing] = useState(false);
 
   const [isSavingSeo, setIsSavingSeo] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  // Settings State
+  const [settingsName, setSettingsName] = useState('');
+  const [settingsLogo, setSettingsLogo] = useState('');
+  const [settingsFooter, setSettingsFooter] = useState('');
+  const [settingsLinks, setSettingsLinks] = useState<{title: string, url: string}[]>([]);
+
+  // SEO State
+  const [seoItems, setSeoItems] = useState<any[]>([]);
+  const [isLoadingSeo, setIsLoadingSeo] = useState(false);
+
+  // Load SEO items on mount/tab change
+  useEffect(() => {
+    if (activeTab === 'seo' && seoItems.length === 0) {
+      loadSeoItems();
+    }
+  }, [activeTab]);
+
+  // Load existing settings
+  useState(() => {
+    try {
+      const saved = localStorage.getItem('geziyorum_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.name) setSettingsName(parsed.name);
+        if (parsed.site_logo_url) setSettingsLogo(parsed.site_logo_url);
+        if (parsed.footer_text) setSettingsFooter(parsed.footer_text);
+        if (parsed.top_links) setSettingsLinks(parsed.top_links);
+      } else {
+        // Defaults
+        setSettingsLinks([
+          { title: 'Destinasyonlar', url: '/destinasyon/ege-bolgesi' },
+          { title: 'Harita', url: '/harita' },
+          { title: 'Rota Planla', url: '/rota-planlayici' },
+          { title: 'Blog', url: '/blog' }
+        ]);
+      }
+    } catch(e) {}
+  });
+
+  const handleSaveSettings = () => {
+    setIsSavingSettings(true);
+    let existing: any = {};
+    try {
+      existing = JSON.parse(localStorage.getItem('geziyorum_settings') || '{}');
+    } catch(e) {}
+    
+    existing.name = settingsName;
+    existing.site_logo_url = settingsLogo;
+    existing.footer_text = settingsFooter;
+    existing.top_links = settingsLinks;
+    
+    localStorage.setItem('geziyorum_settings', JSON.stringify(existing));
+    
+    setTimeout(() => {
+      setIsSavingSettings(false);
+      window.location.reload(); // Refresh to apply new settings to layouts outside generic states
+    }, 1000);
+  };
 
   const handleSync = () => {
     setIsSyncing(true);
     setTimeout(() => setIsSyncing(false), 2000);
   };
 
+  const loadSeoItems = async () => {
+    setIsLoadingSeo(true);
+    try {
+      const WP_URL = import.meta.env.VITE_WP_API_URL || 'https://www.geziyorumturkiye.com';
+      const res = await fetch(`${WP_URL}/wp-json/wp/v2/posts?per_page=15`);
+      if (res.ok) {
+        const data = await res.json();
+        const localSeo = JSON.parse(localStorage.getItem('geziyorum_seo') || '{}');
+        const mapped = data.map((post: any) => {
+          const local = localSeo[post.id] || {};
+          return {
+            id: post.id,
+            type: 'Blog / Destinasyon',
+            title: post.title.rendered,
+            path: `/blog/${post.slug}`,
+            metaTitle: local.metaTitle || `${post.title.rendered} | Geziyorum`,
+            metaDesc: local.metaDesc || post.excerpt?.rendered?.replace(/(<([^>]+)>)/gi, "").substring(0, 100) || ''
+          };
+        });
+        setSeoItems(mapped);
+      }
+    } catch (e) {
+      console.warn("Failed to load SEO items", e);
+    }
+    setIsLoadingSeo(false);
+  };
+
+  const handleSeoChange = (id: number, field: string, value: string) => {
+    setSeoItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
+
   const handleSaveSeo = () => {
     setIsSavingSeo(true);
+    try {
+      const localSeo: any = JSON.parse(localStorage.getItem('geziyorum_seo') || '{}');
+      seoItems.forEach(item => {
+        localSeo[item.id] = { metaTitle: item.metaTitle, metaDesc: item.metaDesc };
+      });
+      localStorage.setItem('geziyorum_seo', JSON.stringify(localSeo));
+    } catch(e) {}
+    
     setTimeout(() => setIsSavingSeo(false), 1500);
+  };
+
+  const handleUpdateLink = (index: number, field: string, value: string) => {
+     setSettingsLinks(prev => prev.map((link, i) => i === index ? { ...link, [field]: value } : link));
+  };
+
+  const handleAddLink = () => {
+     setSettingsLinks([...settingsLinks, { title: 'Yeni Link', url: '/' }]);
+  };
+
+  const handleRemoveLink = (index: number) => {
+     setSettingsLinks(settingsLinks.filter((_, i) => i !== index));
   };
 
   return (
@@ -88,9 +199,12 @@ export function AdminDashboard() {
 
           <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-2 mt-8">Sistem</div>
           <nav className="space-y-1">
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium hover:bg-gray-800 hover:text-white transition-colors">
+            <button 
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors ${activeTab === 'settings' ? 'bg-orange-500 text-white' : 'hover:bg-gray-800 hover:text-white'}`}
+            >
               <Settings className="w-5 h-5" />
-              Ayarlar
+              Genel Ayarlar
             </button>
             <Link to="/" className="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium hover:bg-red-500/10 hover:text-red-400 transition-colors text-gray-400">
               <LogOut className="w-5 h-5" />
@@ -281,15 +395,18 @@ export function AdminDashboard() {
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-100 bg-gray-50">
-                  <h3 className="font-bold text-gray-900">Blog Yazıları (Meta Ayarları)</h3>
+                <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-900">Sayfalar ve İçerikler (Canlı WordPress Entegrasyonu)</h3>
+                  {isLoadingSeo && <span className="text-sm font-medium text-blue-500 animate-pulse">Veriler Çekiliyor...</span>}
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {[
-                    { id: 1, type: 'Blog', title: 'Kapadokya Balon Turu', path: '/blog/kapadokya-balon-turu-rehberi' },
-                    { id: 2, type: 'Blog', title: 'Ege\'nin Maldivleri: Kalem Adası', path: '/blog/ege-maldivleri-kalem-adasi' }
-                  ].map((item) => (
-                    <div key={`blog-${item.id}`} className="p-6">
+                  {seoItems.length === 0 && !isLoadingSeo && (
+                     <div className="p-8 text-center text-gray-500">
+                       İçerik bulunamadı veya yüklenemedi.
+                     </div>
+                  )}
+                  {seoItems.map((item) => (
+                    <div key={`seo-${item.id}`} className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <div className="font-bold text-gray-900 text-lg mb-1">{item.title}</div>
@@ -303,53 +420,16 @@ export function AdminDashboard() {
                           <input 
                             type="text" 
                             className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
-                            defaultValue={`${item.title} | Geziyorum`}
+                            value={item.metaTitle}
+                            onChange={(e) => handleSeoChange(item.id, 'metaTitle', e.target.value)}
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-bold text-gray-700 mb-1">Meta Açıklama</label>
                           <textarea 
                             className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 resize-none h-20"
-                            defaultValue={`${item.title} hakkında detaylı gezi rehberi, fiyatlar ve ipuçları burada! Hemen tıkla ve seyahatini planla.`}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-100 bg-gray-50">
-                  <h3 className="font-bold text-gray-900">Destinasyon Sayfaları (Meta Ayarları)</h3>
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {[
-                    { id: 1, type: 'Destinasyon', title: 'Ege Bölgesi', path: '/destinasyon/ege-bolgesi' },
-                    { id: 2, type: 'Destinasyon', title: 'Kapadokya', path: '/destinasyon/kapadokya' }
-                  ].map((item) => (
-                    <div key={`dest-${item.id}`} className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <div className="font-bold text-gray-900 text-lg mb-1">{item.title}</div>
-                          <div className="text-sm text-orange-500 font-medium">{item.path}</div>
-                        </div>
-                        <span className="bg-orange-50 text-orange-600 text-xs font-bold px-3 py-1 rounded-full">{item.type}</span>
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-1">Meta Başlık</label>
-                          <input 
-                            type="text" 
-                            className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
-                            defaultValue={`${item.title} Gezi Rehberi: En Güzel Yerler ve Konaklama`}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-1">Meta Açıklama</label>
-                          <textarea 
-                            className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 resize-none h-20"
-                            defaultValue={`${item.title} bölgesinde gezilecek yerler, konaklama seçenekleri ve yöresel lezzetler için detaylı rotalar.`}
+                            value={item.metaDesc}
+                            onChange={(e) => handleSeoChange(item.id, 'metaDesc', e.target.value)}
                           />
                         </div>
                       </div>
@@ -623,6 +703,130 @@ export function AdminDashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Sistem ve Marka Ayarları</h2>
+                  <p className="text-gray-500 mt-1">Logo, site ismi ve alt bilgi (footer) alanlarını özelleştirin.</p>
+                </div>
+                <button 
+                  onClick={handleSaveSettings}
+                  disabled={isSavingSettings}
+                  className={`font-bold py-2 px-6 rounded-xl transition-colors ${
+                    isSavingSettings
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-orange-500 hover:bg-orange-600 text-white'
+                  }`}
+                >
+                  {isSavingSettings ? 'Kaydedildi ✓' : 'Ayarları Kaydet'}
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 bg-gray-50">
+                  <h3 className="font-bold text-gray-900">Marka ve Görsel Kimlik</h3>
+                </div>
+                <div className="p-6 space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Site Adı</label>
+                    <input 
+                      type="text" 
+                      value={settingsName}
+                      onChange={(e) => setSettingsName(e.target.value)}
+                      placeholder="Geziyorum Türkiye"
+                      className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Logo URL (Resim Linki)</label>
+                    <div className="flex gap-4 items-start">
+                       <input 
+                         type="text" 
+                         value={settingsLogo}
+                         onChange={(e) => setSettingsLogo(e.target.value)}
+                         placeholder="https://..."
+                         className="flex-1 px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 mt-1"
+                       />
+                       {settingsLogo && (
+                         <div className="w-16 h-16 border rounded bg-gray-50 p-1 flex items-center justify-center shrink-0">
+                            <img src={settingsLogo} alt="Logo Önizleme" referrerPolicy="no-referrer" className="max-w-full max-h-full object-contain" />
+                         </div>
+                       )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Sitenizin üst menüsünde (Header) ve alt bilgisinde (Footer) görünür.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 bg-gray-50">
+                  <h3 className="font-bold text-gray-900">Alt Bilgi (Footer)</h3>
+                </div>
+                <div className="p-6 space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Hakkımızda / Slogan Metni</label>
+                    <textarea 
+                      value={settingsFooter}
+                      onChange={(e) => setSettingsFooter(e.target.value)}
+                      placeholder="Türkiye'nin gizli kalmış cennetlerini..."
+                      className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 resize-none h-24"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Bu yazı sitenin en alt kısmındaki açıklama bölümünde görünür.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-900">Üst Menü Bağlantıları</h3>
+                  <button 
+                    onClick={handleAddLink}
+                    className="text-sm font-bold text-orange-600 hover:text-orange-700 transition-colors"
+                  >
+                    + Yeni Link Ekle
+                  </button>
+                </div>
+                <div className="p-6 space-y-4">
+                  {settingsLinks.map((link, idx) => (
+                    <div key={idx} className="flex items-center gap-4">
+                      <div className="flex-1">
+                         <input 
+                           type="text" 
+                           value={link.title}
+                           onChange={(e) => handleUpdateLink(idx, 'title', e.target.value)}
+                           placeholder="Link Adı"
+                           className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                         />
+                      </div>
+                      <div className="flex-1">
+                         <input 
+                           type="text" 
+                           value={link.url}
+                           onChange={(e) => handleUpdateLink(idx, 'url', e.target.value)}
+                           placeholder="/hedef-url"
+                           className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                         />
+                      </div>
+                      <button 
+                        onClick={() => handleRemoveLink(idx)}
+                        className="p-2 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                        title="Bu linki sil"
+                      >
+                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                      </button>
+                    </div>
+                  ))}
+                  {settingsLinks.length === 0 && (
+                    <div className="text-sm text-gray-500 text-center py-4">Gösterilecek menü linki bulunmuyor.</div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">Bu linkler sitenizin ana üst navigasyonunda (Header) görünür.</p>
+                </div>
+              </div>
+
             </div>
           )}
 

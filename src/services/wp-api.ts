@@ -9,19 +9,53 @@ export interface SiteSettings {
   description: string;
   site_icon_url?: string;
   site_logo_url?: string;
+  top_links?: { title: string; url: string }[];
+  footer_text?: string;
+  seo_title?: string;
+  seo_description?: string;
 }
 
 export async function getSiteSettings(): Promise<SiteSettings | null> {
+  let localSettings: Partial<SiteSettings> = {};
+  try {
+    const saved = localStorage.getItem('geziyorum_settings');
+    if (saved) {
+      localSettings = JSON.parse(saved);
+    }
+  } catch (e) {}
+
+  const defaults = {
+    top_links: [
+        { title: 'Destinasyonlar', url: '/destinasyon/ege-bolgesi' },
+        { title: 'Harita', url: '/harita' },
+        { title: 'Rota Planla', url: '/rota-planlayici' },
+        { title: 'Tüm Öneriler', url: '/' },
+        { title: 'Blog', url: '/blog' }
+    ],
+    footer_text: 'Doğu\'dan Batı\'ya Türkiye\'nin gizli kalmış cennetlerini ve en popüler seyahat rotalarını keşfedin.',
+    site_logo_url: 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=100&h=100&fit=crop'
+  };
+
   try {
     const response = await fetch(`${WP_URL}/wp-json/`);
-    if (!response.ok) return null;
-    const data = await response.json();
+    if (!response.ok) {
+       return {
+         name: localSettings.name || 'Geziyorum',
+         description: localSettings.description || 'Gezi Rehberi',
+         site_icon_url: localSettings.site_icon_url || '',
+         site_logo_url: localSettings.site_logo_url || defaults.site_logo_url,
+         top_links: localSettings.top_links || defaults.top_links,
+         footer_text: localSettings.footer_text || defaults.footer_text,
+         seo_title: localSettings.seo_title,
+         seo_description: localSettings.seo_description
+       };
+    }
     
+    const data = await response.json();
     let site_logo_url = undefined;
     
-    // Fallbacks since WP API can be inconsistent
     if (data.site_icon_url) {
-        site_logo_url = data.site_icon_url; // Use as fallback initially
+        site_logo_url = data.site_icon_url; 
     }
 
     if (data.site_logo) {
@@ -36,21 +70,32 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
                 site_logo_url = mediaData.source_url;
             }
           }
-        } catch (e) {
-          console.warn("Could not fetch media info for site_logo", e);
-        }
+        } catch (e) {}
       }
     }
 
     return {
-      name: data.name,
-      description: data.description,
-      site_icon_url: data.site_icon_url,
-      site_logo_url: site_logo_url
+      name: localSettings.name || data.name,
+      description: localSettings.description || data.description,
+      site_icon_url: localSettings.site_icon_url || data.site_icon_url,
+      site_logo_url: localSettings.site_logo_url || site_logo_url || defaults.site_logo_url,
+      top_links: localSettings.top_links || defaults.top_links,
+      footer_text: localSettings.footer_text || defaults.footer_text,
+      seo_title: localSettings.seo_title,
+      seo_description: localSettings.seo_description
     };
   } catch (error) {
     console.warn("Could not fetch site settings from WordPress.", error);
-    return null;
+    return {
+      name: localSettings.name || 'Geziyorum',
+      description: localSettings.description || '',
+      site_icon_url: localSettings.site_icon_url || '',
+      site_logo_url: localSettings.site_logo_url || defaults.site_logo_url,
+      top_links: localSettings.top_links || defaults.top_links,
+      footer_text: localSettings.footer_text || defaults.footer_text,
+      seo_title: localSettings.seo_title,
+      seo_description: localSettings.seo_description
+    };
   }
 }
 

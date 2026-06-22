@@ -15,6 +15,7 @@ import { getSiteSettings, SiteSettings } from './services/wp-api';
 
 function PublicLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
 
   useEffect(() => {
@@ -68,31 +69,21 @@ function PublicLayout() {
             </Link>
             
             <div className="hidden md:flex items-center space-x-8">
-              {/* Dropdown - Destinasyonlar */}
-              <div className="relative group">
-                <button className="flex items-center gap-1 font-medium text-gray-900 hover:text-orange-600 transition-colors py-4">
-                  Destinasyonlar <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform" />
-                </button>
-                <div className="absolute top-full left-0 w-48 bg-white border border-gray-100 shadow-xl rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all -translate-y-2 group-hover:translate-y-0 overflow-hidden">
-                  <div className="py-2">
-                    <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Türkiye</div>
-                    <Link to="/destinasyon/ege-bolgesi" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">Ege Bölgesi</Link>
-                    <Link to="/destinasyon/akdeniz" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">Akdeniz Kıyıları</Link>
-                    <Link to="/destinasyon/kapadokya" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">Kapadokya</Link>
-                    <div className="max-w-full border-t border-gray-50 my-2"></div>
-                    <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Yurtdışı</div>
-                    <Link to="/destinasyon/balkanlar" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">Balkanlar</Link>
-                    <Link to="/destinasyon/avrupa" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">Klasik Avrupa</Link>
-                  </div>
-                </div>
-              </div>
-
-              <Link to="/harita" className="font-medium text-gray-600 hover:text-gray-900 transition-colors">Harita</Link>
-              <Link to="/rota-planlayici" className="flex items-center gap-1.5 font-medium text-orange-600 hover:text-orange-700 transition-colors">
-                <MapIcon className="w-4 h-4" />
-                Rota Planla
-              </Link>
-              <Link to="/blog" className="font-medium text-gray-600 hover:text-gray-900 transition-colors">Blog</Link>
+              {siteSettings?.top_links && siteSettings.top_links.map((link, idx) => {
+                if (link.title === 'Rota Planla') {
+                  return (
+                    <Link key={idx} to={link.url} className="flex items-center gap-1.5 font-medium text-orange-600 hover:text-orange-700 transition-colors">
+                      <MapIcon className="w-4 h-4" />
+                      {link.title}
+                    </Link>
+                  );
+                }
+                return (
+                  <Link key={idx} to={link.url} className="font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                    {link.title}
+                  </Link>
+                );
+              })}
               
               <button 
                 onClick={() => setIsSearchOpen(true)}
@@ -110,8 +101,51 @@ function PublicLayout() {
                 Admin
               </Link>
             </div>
+            
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center gap-2">
+              <button 
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                title="Arama Yap"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-white border-t border-gray-100 shadow-lg absolute left-0 right-0 py-4 px-4 flex flex-col gap-4">
+            {siteSettings?.top_links && siteSettings.top_links.map((link, idx) => {
+              if (link.title === 'Rota Planla') {
+                return (
+                  <Link key={idx} to={link.url} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 font-medium text-orange-600 hover:text-orange-700 transition-colors px-2 py-1">
+                    <MapIcon className="w-5 h-5" />
+                    {link.title}
+                  </Link>
+                );
+              }
+              return (
+                <Link key={idx} to={link.url} onClick={() => setIsMobileMenuOpen(false)} className="font-medium text-gray-600 hover:text-gray-900 transition-colors px-2 py-1">
+                  {link.title}
+                </Link>
+              );
+            })}
+            <div className="border-t border-gray-100 pt-4 mt-2">
+              <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-all font-medium">
+                Admin Paneli
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       <SmartSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
