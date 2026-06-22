@@ -1,4 +1,4 @@
-import { Menu, User, Compass, ChevronDown, Search } from 'lucide-react';
+import { Menu, User, Compass, ChevronDown, Search, Map as MapIcon, Plus } from 'lucide-react';
 import { Routes, Route, Link, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { HomePage } from './pages/HomePage';
@@ -8,6 +8,7 @@ import { BlogDetailPage } from './pages/BlogDetailPage';
 import { BlogCategoryPage } from './pages/BlogCategoryPage';
 import { MapPage } from './pages/MapPage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { RoutePlannerPage } from './pages/RoutePlannerPage';
 import { SmartSearchModal } from './components/SmartSearchModal';
 import { Footer } from './components/Footer';
 import { getSiteSettings, SiteSettings } from './services/wp-api';
@@ -87,7 +88,10 @@ function PublicLayout() {
               </div>
 
               <Link to="/harita" className="font-medium text-gray-600 hover:text-gray-900 transition-colors">Harita</Link>
-              <Link to="/" className="font-medium text-gray-600 hover:text-gray-900 transition-colors">Tüm Öneriler</Link>
+              <Link to="/rota-planlayici" className="flex items-center gap-1.5 font-medium text-orange-600 hover:text-orange-700 transition-colors">
+                <MapIcon className="w-4 h-4" />
+                Rota Planla
+              </Link>
               <Link to="/blog" className="font-medium text-gray-600 hover:text-gray-900 transition-colors">Blog</Link>
               
               <button 
@@ -130,6 +134,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/tour/:id" element={<TourDetailPage />} />
         <Route path="/harita" element={<MapPage />} />
+        <Route path="/rota-planlayici" element={<RoutePlannerPage />} />
         <Route path="/destinasyon/:slug" element={<CategoryPage />} />
         <Route path="/blog" element={<BlogCategoryPage />} />
         <Route path="/blog/kategori/:categorySlug" element={<BlogCategoryPage />} />

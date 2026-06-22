@@ -108,14 +108,14 @@ export function MapPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
-      <div className="bg-white border-b border-gray-100 p-6 z-10 shadow-sm relative shrink-0">
-        <h1 className="text-2xl font-bold flex items-center gap-2 text-gray-900">
-          <Compass className="w-6 h-6 text-orange-500" />
+    <div className="flex flex-col h-[calc(100vh-64px)] relative">
+      <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur shadow-lg border border-gray-100 p-5 rounded-2xl max-w-md">
+        <h1 className="text-xl font-bold flex items-center gap-2 text-gray-900">
+          <Compass className="w-5 h-5 text-orange-500" />
           İnteraktif Türkiye Haritası
         </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Harita üzerindeki pinlere tıklayarak rotaları ve turistik noktaları inceleyebilirsiniz.
+        <p className="text-gray-500 text-sm mt-2 leading-relaxed">
+          Harita üzerindeki turuncu noktalara tıklayarak turları ve rotaları detaylıca inceleyebilirsiniz.
         </p>
       </div>
       
@@ -132,11 +132,12 @@ export function MapPage() {
             <Map
               defaultCenter={{ lat: 39.0, lng: 35.0 }}
               defaultZoom={6}
-              mapId="TURKIYE_ROTALAR_MAP"
+              mapId="DEMO_MAP_ID"
               internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
               style={{ width: '100%', height: '100%' }}
               gestureHandling="greedy"
-              disableDefaultUI={false}
+              disableDefaultUI={true}
+              zoomControl={true}
             >
               {tours.map((tour) => (
                 <TourMarker key={tour.id} tour={tour} />
