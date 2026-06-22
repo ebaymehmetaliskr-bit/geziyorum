@@ -1,24 +1,32 @@
 import { useState, useRef, useEffect } from 'react';
 import { MapPin, GripVertical, Navigation, Trash2, Plus, ArrowRight, Save, Clock, Search, Banknote } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { TOUR_LISTINGS } from '../data';
+import { getToursFromWordPress } from '../services/wp-api';
 import { TourListing } from '../types';
 
 export function RoutePlannerPage() {
   const [routeItems, setRouteItems] = useState<TourListing[]>([]);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [tours, setTours] = useState<TourListing[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Added default tours for demonstration if list is empty
   useEffect(() => {
-    if (routeItems.length === 0) {
-      setRouteItems([TOUR_LISTINGS[0], TOUR_LISTINGS[2]]);
-    }
+    getToursFromWordPress().then(data => {
+      setTours(data);
+      if (data.length > 1) {
+        setRouteItems([data[0], data[1]]);
+      } else if (data.length === 1) {
+        setRouteItems([data[0]]);
+      }
+      setLoading(false);
+    });
   }, []);
 
-  const availableTours = TOUR_LISTINGS.filter(t => !routeItems.find(r => r.id === t.id))
+  const availableTours = tours.filter(t => !routeItems.find(r => r.id === t.id))
     .filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                  t.location.province.toLowerCase().includes(searchQuery.toLowerCase()));
+
 
   const handleDragStart = (index: number) => {
     setDraggedItemIndex(index);
