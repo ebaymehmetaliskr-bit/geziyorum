@@ -1,6 +1,6 @@
 import { LazyImage } from './LazyImage';
 import { TourListing } from '../types';
-import { MapPin, Star, Share, Heart, Clock, Users, Map, ChevronDown, Calendar, ArrowRight, Facebook, Twitter, Link as LinkIcon, X, Check } from 'lucide-react';
+import { MapPin, Star, Share, Heart, Clock, Users, Map, ChevronDown, Calendar, ArrowRight, Facebook, Twitter, Link as LinkIcon, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin, InfoWindow, useAdvancedMarkerRef, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
@@ -239,7 +239,7 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
         guests: guests,
         status: 'pending',
         userId: user.uid,
-        totalPrice: listing.price * guests,
+        totalPrice: listing.price_try * guests,
         createdAt: serverTimestamp()
       });
       setBookingSuccess(true);
@@ -251,7 +251,7 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
     }
   };
 
-  const submitReview = async (e: React.FormEvent) => {
+  const submitReview = async (e: any) => {
     e.preventDefault();
     if (!user) {
       signInWithGoogle();
@@ -290,106 +290,125 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
     "https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=800&q=80"
   ];
 
+  // Gallery Modal State
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
+
+  const openGallery = (index: number) => {
+    setCurrentGalleryIndex(index);
+    setIsGalleryModalOpen(true);
+  };
+
+  const nextImage = () => {
+    setCurrentGalleryIndex((prev) => (prev + 1) % gallery.length);
+  };
+
+  const prevImage = () => {
+    setCurrentGalleryIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+  };
+
   return (
-    <div className="bg-white min-h-screen pt-24 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Breadcrumb / Back */}
-        <button onClick={onBack} className="text-gray-500 hover:text-gray-900 mb-6 flex items-center gap-2 font-medium text-sm transition-colors">
-          &larr; Ana Sayfaya Dön
-        </button>
+    <>
+      <div className="bg-white min-h-screen pt-24 pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Breadcrumb / Back */}
+          <button onClick={onBack} className="text-gray-500 hover:text-gray-900 mb-6 flex items-center gap-2 font-medium text-sm transition-colors">
+            &larr; Ana Sayfaya Dön
+          </button>
 
-        {/* Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-3 tracking-tight">{listing.title}</h1>
-            <div className="flex flex-wrap items-center gap-4 text-sm font-semibold text-gray-600">
-              <span className="flex items-center gap-1">
-                <Star className="w-5 h-5 text-orange-500 fill-orange-500" />
-                {listing.rating} <span className="font-normal underline underline-offset-2 ml-1 cursor-pointer">(120+ Değerlendirme)</span>
-              </span>
-              <span className="flex items-center gap-1 text-gray-300">&bull;</span>
-              <span className="flex items-center gap-1 underline underline-offset-2 cursor-pointer">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                {listing.location.district}, {listing.location.province}
-              </span>
+          {/* Header */}
+          <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-3 tracking-tight">{listing.title}</h1>
+              <div className="flex flex-wrap items-center gap-4 text-sm font-semibold text-gray-600">
+                <span className="flex items-center gap-1">
+                  <Star className="w-5 h-5 text-orange-500 fill-orange-500" />
+                  {listing.rating} <span className="font-normal underline underline-offset-2 ml-1 cursor-pointer">(120+ Değerlendirme)</span>
+                </span>
+                <span className="flex items-center gap-1 text-gray-300">&bull;</span>
+                <span className="flex items-center gap-1 underline underline-offset-2 cursor-pointer">
+                  <MapPin className="w-4 h-4 text-gray-400" />
+                  {listing.location.district}, {listing.location.province}
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="relative">
+            <div className="flex gap-3">
+              <div className="relative">
+                <button 
+                  onClick={() => setIsShareModalOpen(!isShareModalOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-sm border border-gray-200/0 hover:border-gray-200"
+                >
+                  <Share className="w-4 h-4" /> Paylaş
+                </button>
+                
+                {isShareModalOpen && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
+                     <div className="flex justify-between items-center mb-4">
+                       <h3 className="font-bold text-gray-900">Bu ilanı paylaş</h3>
+                       <button onClick={() => setIsShareModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                         <X className="w-5 h-5" />
+                       </button>
+                     </div>
+                     <div className="grid grid-cols-4 gap-2 mb-4">
+                       <a href={shareUrls.facebook} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                         <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><Facebook className="w-5 h-5" /></div>
+                         <span className="text-[10px] font-medium text-gray-500">Facebook</span>
+                       </a>
+                       <a href={shareUrls.twitter} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                         <div className="w-10 h-10 rounded-full bg-sky-50 text-sky-500 flex items-center justify-center"><Twitter className="w-5 h-5" /></div>
+                         <span className="text-[10px] font-medium text-gray-500">Twitter</span>
+                       </a>
+                       <a href={shareUrls.whatsapp} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                         <div className="w-10 h-10 rounded-full bg-green-50 text-green-500 flex items-center justify-center">
+                           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                         </div>
+                         <span className="text-[10px] font-medium text-gray-500">WhatsApp</span>
+                       </a>
+                       <button onClick={handleCopyLink} className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                         <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
+                           {copiedLink ? <Check className="w-5 h-5 text-green-600" /> : <LinkIcon className="w-5 h-5" />}
+                         </div>
+                         <span className="text-[10px] font-medium text-gray-500">{copiedLink ? 'Kopyalandı' : 'Bağlantı'}</span>
+                       </button>
+                     </div>
+                  </div>
+                )}
+              </div>
               <button 
-                onClick={() => setIsShareModalOpen(!isShareModalOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-sm border border-gray-200/0 hover:border-gray-200"
+                onClick={toggleFavorite}
+                disabled={isFavoriteLoading}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-semibold text-sm border border-gray-200/0 hover:border-gray-200 ${isFavorite ? 'text-orange-600 bg-orange-50' : 'hover:bg-gray-100 text-gray-700'}`}
               >
-                <Share className="w-4 h-4" /> Paylaş
+                <Heart className={`w-4 h-4 ${isFavorite ? 'fill-orange-500 text-orange-500' : ''}`} /> Kaydet
               </button>
-              
-              {isShareModalOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
-                   <div className="flex justify-between items-center mb-4">
-                     <h3 className="font-bold text-gray-900">Bu ilanı paylaş</h3>
-                     <button onClick={() => setIsShareModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                       <X className="w-5 h-5" />
-                     </button>
-                   </div>
-                   <div className="grid grid-cols-4 gap-2 mb-4">
-                     <a href={shareUrls.facebook} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
-                       <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><Facebook className="w-5 h-5" /></div>
-                       <span className="text-[10px] font-medium text-gray-500">Facebook</span>
-                     </a>
-                     <a href={shareUrls.twitter} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
-                       <div className="w-10 h-10 rounded-full bg-sky-50 text-sky-500 flex items-center justify-center"><Twitter className="w-5 h-5" /></div>
-                       <span className="text-[10px] font-medium text-gray-500">Twitter</span>
-                     </a>
-                     <a href={shareUrls.whatsapp} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
-                       <div className="w-10 h-10 rounded-full bg-green-50 text-green-500 flex items-center justify-center">
-                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                       </div>
-                       <span className="text-[10px] font-medium text-gray-500">WhatsApp</span>
-                     </a>
-                     <button onClick={handleCopyLink} className="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-xl transition-colors">
-                       <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
-                         {copiedLink ? <Check className="w-5 h-5 text-green-600" /> : <LinkIcon className="w-5 h-5" />}
-                       </div>
-                       <span className="text-[10px] font-medium text-gray-500">{copiedLink ? 'Kopyalandı' : 'Bağlantı'}</span>
-                     </button>
-                   </div>
-                </div>
-              )}
             </div>
-            <button 
-              onClick={toggleFavorite}
-              disabled={isFavoriteLoading}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-semibold text-sm border border-gray-200/0 hover:border-gray-200 ${isFavorite ? 'text-orange-600 bg-orange-50' : 'hover:bg-gray-100 text-gray-700'}`}
-            >
-              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-orange-500 text-orange-500' : ''}`} /> Kaydet
-            </button>
           </div>
-        </div>
 
-        {/* Gallery Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-[45vh] md:h-[60vh] rounded-2xl overflow-hidden mb-12">
-          <div className="md:col-span-2 row-span-2 relative group cursor-pointer h-full">
-            <LazyImage src={gallery[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Main" />
-            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+          {/* Gallery Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-[45vh] md:h-[60vh] rounded-2xl overflow-hidden mb-12">
+            <div onClick={() => openGallery(0)} className="md:col-span-2 row-span-2 relative group cursor-pointer h-full">
+              <LazyImage src={gallery[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Main" />
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+            </div>
+            <div onClick={() => openGallery(1)} className="hidden md:block relative group cursor-pointer overflow-hidden h-full">
+               <LazyImage src={gallery[1]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Gallery 1" />
+               <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+            </div>
+            <div onClick={() => openGallery(2)} className="hidden md:block relative group cursor-pointer overflow-hidden h-full">
+               <LazyImage src={gallery[2]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Gallery 2" />
+               <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+            </div>
+            <div onClick={() => openGallery(3)} className="hidden md:block relative group cursor-pointer overflow-hidden h-full">
+               <LazyImage src={gallery[3]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Gallery 3" />
+               <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+            </div>
+            <div onClick={() => openGallery(4)} className="hidden md:block relative group cursor-pointer overflow-hidden h-full">
+               <LazyImage src={gallery[4]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Gallery 4" />
+               <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+               <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur text-sm font-bold px-3 py-1.5 rounded-lg shadow-sm">Tüm Fotoları Gör</div>
+            </div>
           </div>
-          <div className="hidden md:block relative group cursor-pointer overflow-hidden h-full">
-             <LazyImage src={gallery[1]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Gallery 1" />
-             <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
-          </div>
-          <div className="hidden md:block relative group cursor-pointer overflow-hidden h-full">
-             <LazyImage src={gallery[2]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Gallery 2" />
-             <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
-          </div>
-          <div className="hidden md:block relative group cursor-pointer overflow-hidden h-full">
-             <LazyImage src={gallery[3]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Gallery 3" />
-             <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
-          </div>
-          <div className="hidden md:block relative group cursor-pointer overflow-hidden h-full">
-             <LazyImage src={gallery[4]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" wrapperClassName="w-full h-full" alt="Gallery 4" />
-             <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
-          </div>
-        </div>
 
         {/* Main Content Split */}
         <div className="flex flex-col lg:flex-row gap-12">
@@ -694,5 +713,65 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
         </div>
       </div>
     </div>
+
+      {/* Fullscreen Gallery Modal */}
+      {isGalleryModalOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col">
+          {/* Header */}
+          <div className="flex justify-between items-center p-6 text-white h-20 shrink-0">
+            <div className="text-sm font-medium tracking-widest text-white/50 uppercase">
+              {currentGalleryIndex + 1} / {gallery.length}
+            </div>
+            <button 
+              onClick={() => setIsGalleryModalOpen(false)}
+              className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 flex items-center justify-center relative px-4 md:px-16 overflow-hidden">
+             
+            <button 
+              onClick={(e) => { e.stopPropagation(); prevImage(); }}
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-sm z-10"
+            >
+              <ChevronLeft className="w-8 h-8" />
+            </button>
+
+            <div className="relative w-full h-full max-h-[85vh] flex items-center justify-center" onClick={() => setIsGalleryModalOpen(false)}>
+              <LazyImage 
+                key={currentGalleryIndex}
+                src={gallery[currentGalleryIndex]} 
+                alt={`Gallery image ${currentGalleryIndex + 1}`} 
+                className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-lg shadow-2xl animate-in fade-in duration-300"
+                wrapperClassName="w-full h-full flex items-center justify-center" 
+              />
+            </div>
+
+            <button 
+              onClick={(e) => { e.stopPropagation(); nextImage(); }}
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-sm z-10"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </button>
+          </div>
+
+          {/* Thumbnails */}
+          <div className="h-24 md:h-32 shrink-0 p-4 md:p-6 flex items-center justify-center gap-2 overflow-x-auto">
+             {gallery.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentGalleryIndex(idx)}
+                  className={`relative h-full shrink-0 aspect-[4/3] rounded-lg overflow-hidden transition-all ${idx === currentGalleryIndex ? 'ring-2 ring-white scale-105' : 'opacity-50 hover:opacity-100'}`}
+                >
+                  <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                </button>
+             ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
