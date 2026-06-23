@@ -45,7 +45,7 @@ export function ListingCard({ listing, onClick }: ListingCardProps) {
           </div>
           <div className="text-right">
             <span className="text-xs text-gray-500 block">Kişi Başı</span>
-            <span className="text-lg font-bold text-gray-900">₺{listing.price_try}</span>
+            <span className="text-lg font-bold text-gray-900">{listing.display_price || `₺${listing.price_try}`}</span>
           </div>
         </div>
       </div>

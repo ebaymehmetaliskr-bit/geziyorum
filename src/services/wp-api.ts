@@ -101,9 +101,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
 
 export async function getToursFromWordPress(page: number = 1): Promise<TourListing[]> {
   try {
-    // Asıl senaryoda Rehub temasının özel post type'ını çağırıyoruz (örn: 'tours' veya standart 'posts')
-    // ?_embed parametresi ile öne çıkan görselleri (embedded media) de veriye dahil ediyoruz.
-    const response = await fetch(`${WP_API_BASE}/posts?_embed&per_page=9&page=${page}`, {
+    const response = await fetch(`${WP_API_BASE}/tours?_embed&per_page=9&page=${page}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
@@ -115,33 +113,37 @@ export async function getToursFromWordPress(page: number = 1): Promise<TourListi
       return TOUR_LISTINGS;
     }
 
-    const wpPosts = await response.json();
+    const wpTours = await response.json();
 
-    // WordPress'ten gelen API verisini projemizdeki TourListing arayüzüne (interface) haritalandırıyoruz (Mapping).
-    return wpPosts.map((post: any) => {
+    return wpTours.map((tour: any) => {
       // İçerikteki HTML taglerini temizliyoruz
-      const cleanDescription = post.content?.rendered?.replace(/(<([^>]+)>)/gi, "").substring(0, 150) + "...";
+      const cleanDescription = tour.excerpt?.rendered 
+        ? tour.excerpt.rendered.replace(/(<([^>]+)>)/gi, "").substring(0, 150) + "..." 
+        : tour.content?.rendered?.replace(/(<([^>]+)>)/gi, "").substring(0, 150) + "...";
       
-      const acf = post.acf || {};
+      const acf = tour.acf || {};
 
-        const wpTerms = post._embedded?.['wp:term'];
-        let categories: string[] = ["Bilinmeyen Kategori"];
-        if (wpTerms && Array.isArray(wpTerms)) {
-          // Flatten all terms and filter the categories
-          const allTerms = wpTerms.flat();
-          const categoryTerms = allTerms.filter((term: any) => term.taxonomy === 'category' || term.taxonomy === 'post_tag');
-          if (categoryTerms.length > 0) {
-            categories = categoryTerms.map((term: any) => term.name);
-          }
+      const wpTerms = tour._embedded?.['wp:term'];
+      let categories: string[] = ["Bilinmeyen Kategori"];
+      if (wpTerms && Array.isArray(wpTerms)) {
+        // Flatten all terms and filter the categories
+        const allTerms = wpTerms.flat();
+        const categoryTerms = allTerms.filter((term: any) => term.taxonomy === 'category' || term.taxonomy === 'post_tag' || term.taxonomy === 'tour_category');
+        if (categoryTerms.length > 0) {
+          categories = categoryTerms.map((term: any) => term.name);
         }
+      }
+
+      const rawPrice = tour.tour_price || acf.price_try || "0";
+      const numericPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, '')) || 0;
 
       return {
-        id: post.id.toString(),
-        title: post.title?.rendered || 'İsimsiz Rota',
-        slug: post.slug,
+        id: tour.id.toString(),
+        title: tour.title?.rendered || 'İsimsiz Rota',
+        slug: tour.slug,
         description: cleanDescription || '',
         location: {
-          province: acf.province || "Bilinmiyor",
+          province: tour.tour_location || acf.province || "Bilinmiyor",
           district: acf.district || ""
         },
         coordinates: { 
@@ -150,12 +152,13 @@ export async function getToursFromWordPress(page: number = 1): Promise<TourListi
         },
         categories: categories,
         tags: [],
-        price_try: parseInt(acf.price_try) || 1200, 
-        duration_days: parseInt(acf.duration_days) || 1, 
-        rating: parseFloat(acf.rating) || 4.8,
-        featured_image: post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?auto=format&fit=crop&w=800&q=80',
+        price_try: numericPrice, 
+        display_price: tour.tour_price || "Fiyat Belirtilmemiş",
+        duration_days: tour.tour_duration || acf.duration_days || "Süre Belirtilmemiş", 
+        rating: parseFloat(acf.rating) || 5.0,
+        featured_image: tour._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524231757912-21f4fe3a0837?auto=format&fit=crop&w=800&q=80',
         gallery_images: [],
-        affiliate_link: acf.affiliate_link || ''
+        affiliate_link: tour.tour_affiliate_link || acf.affiliate_link || ''
       } as TourListing;
     });
 
@@ -252,7 +255,7 @@ export async function getBlogPostBySlugFromWordPress(slug: string): Promise<Blog
 export async function getTourByIdFromWordPress(id: string): Promise<TourListing | null> {
 
   try {
-    const response = await fetch(`${WP_API_BASE}/posts/${id}?_embed`, {
+    const response = await fetch(`${WP_API_BASE}/tours/${id}?_embed`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
@@ -265,28 +268,33 @@ export async function getTourByIdFromWordPress(id: string): Promise<TourListing 
       return mockTour || null;
     }
 
-    const post = await response.json();
+    const tour = await response.json();
 
-    const cleanDescription = post.content?.rendered?.replace(/(<([^>]+)>)/gi, "").substring(0, 150) + "...";
-    const acf = post.acf || {};
+    const cleanDescription = tour.excerpt?.rendered 
+        ? tour.excerpt.rendered.replace(/(<([^>]+)>)/gi, "").substring(0, 150) + "..." 
+        : tour.content?.rendered?.replace(/(<([^>]+)>)/gi, "").substring(0, 150) + "...";
+    const acf = tour.acf || {};
 
-    const wpTerms = post._embedded?.['wp:term'];
+    const wpTerms = tour._embedded?.['wp:term'];
     let categories: string[] = ["Bilinmeyen Kategori"];
     if (wpTerms && Array.isArray(wpTerms)) {
       const allTerms = wpTerms.flat();
-      const categoryTerms = allTerms.filter((term: any) => term.taxonomy === 'category' || term.taxonomy === 'post_tag');
+      const categoryTerms = allTerms.filter((term: any) => term.taxonomy === 'category' || term.taxonomy === 'post_tag' || term.taxonomy === 'tour_category');
       if (categoryTerms.length > 0) {
         categories = categoryTerms.map((term: any) => term.name);
       }
     }
 
+    const rawPrice = tour.tour_price || acf.price_try || "0";
+    const numericPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, '')) || 0;
+
     return {
-      id: post.id.toString(),
-      title: post.title?.rendered || 'İsimsiz Rota',
-      slug: post.slug,
+      id: tour.id.toString(),
+      title: tour.title?.rendered || 'İsimsiz Rota',
+      slug: tour.slug,
       description: cleanDescription || '',
       location: {
-        province: acf.province || "Bilinmiyor",
+        province: tour.tour_location || acf.province || "Bilinmiyor",
         district: acf.district || ""
       },
       coordinates: { 
@@ -295,12 +303,13 @@ export async function getTourByIdFromWordPress(id: string): Promise<TourListing 
       },
       categories: categories,
       tags: [],
-      price_try: parseInt(acf.price_try) || 1200, 
-      duration_days: parseInt(acf.duration_days) || 1, 
-      rating: parseFloat(acf.rating) || 4.8,
-      featured_image: post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?auto=format&fit=crop&w=800&q=80',
+      price_try: numericPrice, 
+      display_price: tour.tour_price || "Fiyat Belirtilmemiş",
+      duration_days: tour.tour_duration || acf.duration_days || "Süre Belirtilmemiş", 
+      rating: parseFloat(acf.rating) || 5.0,
+      featured_image: tour._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524231757912-21f4fe3a0837?auto=format&fit=crop&w=800&q=80',
       gallery_images: [],
-      affiliate_link: acf.affiliate_link || ''
+      affiliate_link: tour.tour_affiliate_link || acf.affiliate_link || ''
     } as TourListing;
 
   } catch (error) {

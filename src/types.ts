@@ -20,7 +20,8 @@ export interface TourListing {
   categories: Category[];
   tags: string[];
   price_try: number;
-  duration_days: number;
+  display_price?: string;
+  duration_days: number | string;
   rating: number;
   featured_image: string;
   gallery_images: string[];
