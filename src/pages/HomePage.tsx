@@ -7,6 +7,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { getToursFromWordPress, getBlogPostsFromWordPress } from '../services/wp-api';
 import { MapPin, ArrowRight, Mail } from 'lucide-react';
 import { LazyImage } from '../components/LazyImage';
+import { SEO } from '../components/SEO';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ export function HomePage() {
 
   return (
     <>
+      <SEO id="page_home" />
       <HeroSection />
 
       {/* Rota Sihirbazı Section */}

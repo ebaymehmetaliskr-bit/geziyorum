@@ -12,9 +12,17 @@ export interface SiteSettings {
   site_icon_url?: string;
   site_logo_url?: string;
   top_links?: { title: string; url: string }[];
+  footer_links?: { title: string; url: string }[];
   footer_text?: string;
   seo_title?: string;
   seo_description?: string;
+  contact_address?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  legal_links?: { title: string; url: string }[];
+  social_instagram?: string;
+  social_facebook?: string;
+  social_twitter?: string;
 }
 
 export async function getSiteSettings(): Promise<SiteSettings | null> {
@@ -29,13 +37,30 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
   const defaults = {
     top_links: [
         { title: 'Destinasyonlar', url: '/destinasyon/ege-bolgesi' },
-        { title: 'Harita', url: '/harita' },
         { title: 'Rota Planla', url: '/rota-planlayici' },
-        { title: 'Tüm Öneriler', url: '/' },
         { title: 'Blog', url: '/blog' }
     ],
+    footer_links: [
+        { title: 'Ege Kıyıları', url: '/destinasyon/ege-bolgesi' },
+        { title: 'Akdeniz Rotaları', url: '/destinasyon/akdeniz' },
+        { title: 'Kapadokya Turu', url: '/destinasyon/kapadokya' },
+        { title: 'Gezi Rehberleri', url: '/blog' },
+        { title: 'Konaklama Tavsiyeleri', url: '/blog' }
+    ],
     footer_text: 'Doğu\'dan Batı\'ya Türkiye\'nin gizli kalmış cennetlerini ve en popüler seyahat rotalarını keşfedin.',
-    site_logo_url: 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=100&h=100&fit=crop'
+    site_logo_url: 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=100&h=100&fit=crop',
+    contact_address: 'Beşiktaş, İstanbul\nTürkiye',
+    contact_phone: '+90 (212) 555 0123',
+    contact_email: 'iletisim@geziyorum.com',
+    legal_links: [
+      { title: 'Kullanım Koşulları', url: '/kullanim-kosullari' },
+      { title: 'Gizlilik Politikası', url: '/gizlilik' },
+      { title: 'Çerez Politikası', url: '/cerezler' },
+      { title: 'KVKK Aydınlatma Metni', url: '/kvkk' }
+    ],
+    social_instagram: 'https://instagram.com/geziyorum',
+    social_facebook: 'https://facebook.com/geziyorum',
+    social_twitter: 'https://twitter.com/geziyorum',
   };
 
   try {
@@ -49,9 +74,17 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
          site_icon_url: localSettings.site_icon_url || '',
          site_logo_url: localSettings.site_logo_url || defaults.site_logo_url,
          top_links: localSettings.top_links || defaults.top_links,
+         footer_links: localSettings.footer_links || defaults.footer_links,
          footer_text: localSettings.footer_text || defaults.footer_text,
          seo_title: localSettings.seo_title,
-         seo_description: localSettings.seo_description
+         seo_description: localSettings.seo_description,
+         contact_address: localSettings.contact_address || defaults.contact_address,
+         contact_phone: localSettings.contact_phone || defaults.contact_phone,
+         contact_email: localSettings.contact_email || defaults.contact_email,
+         legal_links: localSettings.legal_links || defaults.legal_links,
+         social_instagram: localSettings.social_instagram || defaults.social_instagram,
+         social_facebook: localSettings.social_facebook || defaults.social_facebook,
+         social_twitter: localSettings.social_twitter || defaults.social_twitter,
        };
     }
     
@@ -84,9 +117,17 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
       site_icon_url: localSettings.site_icon_url || data.site_icon_url,
       site_logo_url: localSettings.site_logo_url || site_logo_url || defaults.site_logo_url,
       top_links: localSettings.top_links || defaults.top_links,
+      footer_links: localSettings.footer_links || defaults.footer_links,
       footer_text: localSettings.footer_text || defaults.footer_text,
       seo_title: localSettings.seo_title,
-      seo_description: localSettings.seo_description
+      seo_description: localSettings.seo_description,
+      contact_address: localSettings.contact_address || defaults.contact_address,
+      contact_phone: localSettings.contact_phone || defaults.contact_phone,
+      contact_email: localSettings.contact_email || defaults.contact_email,
+      legal_links: localSettings.legal_links || defaults.legal_links,
+      social_instagram: localSettings.social_instagram || defaults.social_instagram,
+      social_facebook: localSettings.social_facebook || defaults.social_facebook,
+      social_twitter: localSettings.social_twitter || defaults.social_twitter,
     };
   } catch (error) {
     console.warn("Could not fetch site settings from WordPress.", error);
@@ -96,9 +137,17 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
       site_icon_url: localSettings.site_icon_url || '',
       site_logo_url: localSettings.site_logo_url || defaults.site_logo_url,
       top_links: localSettings.top_links || defaults.top_links,
+      footer_links: localSettings.footer_links || defaults.footer_links,
       footer_text: localSettings.footer_text || defaults.footer_text,
       seo_title: localSettings.seo_title,
-      seo_description: localSettings.seo_description
+      seo_description: localSettings.seo_description,
+      contact_address: localSettings.contact_address || defaults.contact_address,
+      contact_phone: localSettings.contact_phone || defaults.contact_phone,
+      contact_email: localSettings.contact_email || defaults.contact_email,
+      legal_links: localSettings.legal_links || defaults.legal_links,
+      social_instagram: localSettings.social_instagram || defaults.social_instagram,
+      social_facebook: localSettings.social_facebook || defaults.social_facebook,
+      social_twitter: localSettings.social_twitter || defaults.social_twitter,
     };
   }
 }
@@ -184,6 +233,17 @@ export interface BlogPost {
   img: string;
 }
 
+// HTML Entity Decoder using DOMParser for safe and complete decoding
+export const decodeHtmlEntities = (text: string): string => {
+  if (!text) return '';
+  try {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    return doc.documentElement.textContent || text;
+  } catch (e) {
+    return text;
+  }
+};
+
 export async function getBlogPostsFromWordPress(perPage = 10, categorySlug = ''): Promise<BlogPost[]> {
   try {
     let url = `${WP_API_BASE}/posts?_embed&per_page=${perPage}`;
@@ -212,8 +272,8 @@ export async function getBlogPostsFromWordPress(perPage = 10, categorySlug = '')
       return {
         id: post.id,
         slug: post.slug,
-        title: post.title?.rendered,
-        excerpt: excerpt.length > 150 ? excerpt.substring(0, 150) + "..." : excerpt,
+        title: decodeHtmlEntities(post.title?.rendered || ''),
+        excerpt: decodeHtmlEntities(excerpt.length > 150 ? excerpt.substring(0, 150) + "..." : excerpt),
         content: post.content?.rendered,
         date: new Date(post.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
         categoryName: termInfo?.name || 'Genel',
@@ -242,8 +302,8 @@ export async function getBlogPostBySlugFromWordPress(slug: string): Promise<Blog
     return {
       id: post.id,
       slug: post.slug,
-      title: post.title?.rendered,
-      excerpt,
+      title: decodeHtmlEntities(post.title?.rendered || ''),
+      excerpt: decodeHtmlEntities(excerpt),
       content: post.content?.rendered,
       date: new Date(post.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
       categoryName: termInfo?.name || 'Genel',

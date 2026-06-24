@@ -1,49 +1,53 @@
 import React, { useEffect, useState } from 'react';
-import { APIProvider, Map, AdvancedMarker, Pin, InfoWindow, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
 import { Compass, MapPin } from 'lucide-react';
 import { getToursFromWordPress } from '../services/wp-api';
 import { TourListing } from '../types';
+import { SEO } from '../components/SEO';
 
-const rawKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || '';
-const API_KEY = rawKey !== 'YOUR_API_KEY' ? rawKey : '';
-const hasValidKey = Boolean(API_KEY);
+// Fix for default Leaflet markers in React
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+// Custom orange marker for Geziyorum
+const customIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 const TourMarker: React.FC<{ tour: TourListing }> = ({ tour }) => {
-  const [markerRef, marker] = useAdvancedMarkerRef();
-  const [open, setOpen] = useState(false);
-
   if (!tour.coordinates) return null;
 
   return (
-    <>
-      <AdvancedMarker 
-        ref={markerRef} 
-        position={{ lat: tour.coordinates.lat, lng: tour.coordinates.lng }} 
-        title={tour.title}
-        onClick={() => setOpen(true)}
-      >
-        <Pin background="#f97316" glyphColor="#fff" borderColor="#c2410c" />
-      </AdvancedMarker>
-      
-      {open && (
-        <InfoWindow 
-          anchor={marker} 
-          onCloseClick={() => setOpen(false)}
-          headerDisabled
-        >
-          <div className="w-56 flex flex-col p-1">
-            <div className="h-32 w-full relative rounded-lg overflow-hidden mb-3">
-              <img 
-                src={tour.featured_image} 
-                alt={tour.title}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute top-2 right-2 bg-white text-gray-900 px-2 py-0.5 rounded text-xs font-bold shadow-sm">
-                ₺{tour.price_try}
-              </div>
+    <Marker 
+      position={[tour.coordinates.lat, tour.coordinates.lng]}
+      icon={customIcon}
+    >
+      <Popup closeButton={false} className="custom-popup">
+        <div className="w-56 flex flex-col p-0 pb-1 m-[-14px]">
+          <div className="h-32 w-full relative rounded-t-lg overflow-hidden mb-3">
+            <img 
+              src={tour.featured_image} 
+              alt={tour.title}
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute top-2 right-2 bg-white text-gray-900 px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+              ₺{tour.price_try}
             </div>
+          </div>
+          <div className="px-3">
             <div className="flex items-center gap-1 text-xs font-medium text-orange-500 mb-1">
               <MapPin className="w-3 h-3" />
               {tour.location.province}, {tour.location.district}
@@ -58,9 +62,9 @@ const TourMarker: React.FC<{ tour: TourListing }> = ({ tour }) => {
               İncele
             </Link>
           </div>
-        </InfoWindow>
-      )}
-    </>
+        </div>
+      </Popup>
+    </Marker>
   );
 }
 
@@ -75,75 +79,57 @@ export function MapPage() {
     });
   }, []);
 
-  if (!hasValidKey) {
-    return (
-      <div className="flex flex-col h-[calc(100vh-64px)] items-center justify-center bg-gray-50 p-6">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 max-w-lg w-full text-center">
-          <Compass className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Google Maps API Anahtarı Gerekli</h2>
-          <div className="text-left space-y-4 text-gray-600 text-sm bg-gray-50 p-6 rounded-xl border border-gray-100">
-            <p><strong>Adım 1:</strong> <a href="https://console.cloud.google.com/google/maps-apis/start?utm_campaign=gmp-code-assist-ais" target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline font-medium">Google Cloud'dan API Anahtarı Alın</a></p>
-            <p><strong>Adım 2:</strong> AI Studio'da sisteme ekleyin:</p>
-            <ul className="list-none space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="bg-gray-200 text-gray-700 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs mt-0.5">1</span>
-                Sağ üstteki <strong>Ayarlar (⚙️)</strong> girip <strong>Secrets</strong> seçin.
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="bg-gray-200 text-gray-700 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs mt-0.5">2</span>
-                İsim: <code className="bg-gray-200 px-1 py-0.5 rounded text-gray-800">VITE_GOOGLE_MAPS_PLATFORM_KEY</code> yazıp Enter yapın.
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="bg-gray-200 text-gray-700 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs mt-0.5">3</span>
-                Değer kısmına anahtarı yapıştırıp tekrar Enter yapın.
-              </li>
-            </ul>
-            <p className="text-xs text-gray-500 pt-2 border-t border-gray-200">Sistem otomatik olarak güncellenecektir. Sayfayı yenilemenize gerek yoktur.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] relative">
-      <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur shadow-lg border border-gray-100 p-5 rounded-2xl max-w-md">
+      <SEO id="page_map" />
+      <div className="absolute top-4 left-4 z-[400] bg-white/95 backdrop-blur shadow-lg border border-gray-100 p-5 rounded-2xl max-w-md pointer-events-auto">
         <h1 className="text-xl font-bold flex items-center gap-2 text-gray-900">
           <Compass className="w-5 h-5 text-orange-500" />
           İnteraktif Türkiye Haritası
         </h1>
         <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-          Harita üzerindeki turuncu noktalara tıklayarak turları ve rotaları detaylıca inceleyebilirsiniz.
+          Harita üzerindeki noktalara tıklayarak turları ve rotaları detaylıca inceleyebilirsiniz.
         </p>
       </div>
       
-      <div className="flex-1 w-full bg-gray-100 relative">
+      <div className="flex-1 w-full bg-gray-100 relative z-0">
         {loading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-20">
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-[500]">
             <div className="flex flex-col items-center">
               <Compass className="w-8 h-8 text-orange-500 animate-spin" />
               <span className="mt-4 text-sm font-bold text-gray-900 uppercase tracking-widest">Harita Yükleniyor</span>
             </div>
           </div>
         ) : (
-          <APIProvider apiKey={API_KEY} version="weekly">
-            <Map
-              defaultCenter={{ lat: 39.0, lng: 35.0 }}
-              defaultZoom={6}
-              mapId="DEMO_MAP_ID"
-              internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
-              style={{ width: '100%', height: '100%' }}
-              gestureHandling="greedy"
-              disableDefaultUI={true}
-              zoomControl={true}
-            >
-              {tours.map((tour) => (
-                <TourMarker key={tour.id} tour={tour} />
-              ))}
-            </Map>
-          </APIProvider>
+          <MapContainer 
+            center={[39.0, 35.0]} 
+            zoom={6} 
+            style={{ height: '100%', width: '100%' }}
+            zoomControl={true}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {tours.map((tour) => (
+              <TourMarker key={tour.id} tour={tour} />
+            ))}
+          </MapContainer>
         )}
       </div>
+      
+      {/* Custom styles for Leaflet popups inside Tailwind */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .leaflet-popup-content-wrapper {
+          padding: 0;
+          overflow: hidden;
+          border-radius: 0.5rem;
+        }
+        .leaflet-popup-content {
+          margin: 0;
+          width: auto !important;
+        }
+      `}} />
     </div>
   );
 }

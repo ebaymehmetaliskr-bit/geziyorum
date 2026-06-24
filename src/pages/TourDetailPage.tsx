@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { TourListing } from '../types';
 import { getTourByIdFromWordPress } from '../services/wp-api';
 import { ArrowLeft, MapPin, Clock, Star, ExternalLink, Calendar, Users, Share2 } from 'lucide-react';
+import { SEO } from '../components/SEO';
 
 export function TourDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +43,7 @@ export function TourDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      <SEO id={listing.id} defaultTitle={`${listing.title} | Geziyorum`} defaultDesc={listing.description.substring(0, 100)} />
       {/* Hero Section */}
       <div className="relative h-[60vh] min-h-[500px] w-full bg-gray-900">
         <img 

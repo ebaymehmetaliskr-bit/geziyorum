@@ -83,10 +83,36 @@ function PublicLayout() {
             
             <div className="hidden md:flex items-center space-x-8">
               {siteSettings?.top_links && siteSettings.top_links.map((link, idx) => {
+                if (link.title === 'Destinasyonlar') {
+                  return (
+                    <div key={idx} className="relative group">
+                      <button className="flex items-center gap-1 font-medium text-gray-600 hover:text-gray-900 transition-colors py-2">
+                        {link.title}
+                        <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform duration-200" />
+                      </button>
+                      <div className="absolute top-full left-0 w-48 bg-white border border-gray-100 shadow-xl rounded-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-2 group-hover:translate-y-0 z-50">
+                        <Link to="/destinasyon/ege-bolgesi" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600">Ege Bölgesi</Link>
+                        <Link to="/destinasyon/akdeniz" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600">Akdeniz</Link>
+                        <Link to="/destinasyon/marmara" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600">Marmara</Link>
+                        <Link to="/destinasyon/karadeniz" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600">Karadeniz</Link>
+                        <Link to="/destinasyon/ic-anadolu" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600">İç Anadolu</Link>
+                        <Link to="/destinasyon/kapadokya" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600">Kapadokya</Link>
+                      </div>
+                    </div>
+                  );
+                }
                 if (link.title === 'Rota Planla') {
                   return (
                     <Link key={idx} to={link.url} className="flex items-center gap-1.5 font-medium text-orange-600 hover:text-orange-700 transition-colors">
                       <MapIcon className="w-4 h-4" />
+                      {link.title}
+                    </Link>
+                  );
+                }
+                if (link.title === 'Harita') {
+                  return (
+                    <Link key={idx} to={link.url} className="flex items-center gap-1.5 font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                      <Compass className="w-4 h-4" />
                       {link.title}
                     </Link>
                   );
@@ -97,6 +123,14 @@ function PublicLayout() {
                   </Link>
                 );
               })}
+              
+              {/* Ensure Harita is shown if missing from wp settings */}
+              {!siteSettings?.top_links?.some(l => l.title === 'Harita') && (
+                <Link to="/harita" className="flex items-center gap-1.5 font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                  <Compass className="w-4 h-4" />
+                  Harita
+                </Link>
+              )}
               
               <button 
                 onClick={() => setIsSearchOpen(true)}
@@ -111,10 +145,6 @@ function PublicLayout() {
               </button>
 
               <UserMenu />
-
-              <Link to="/admin" className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-all text-sm font-medium">
-                Admin
-              </Link>
             </div>
             
             {/* Mobile Menu Button */}
@@ -140,10 +170,31 @@ function PublicLayout() {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 shadow-lg absolute top-full left-0 right-0 py-4 px-4 flex flex-col gap-4">
             {siteSettings?.top_links && siteSettings.top_links.map((link, idx) => {
+              if (link.title === 'Destinasyonlar') {
+                return (
+                  <div key={idx} className="flex flex-col gap-2">
+                    <span className="font-medium text-gray-900 px-2 py-1 border-b border-gray-100">{link.title}</span>
+                    <Link to="/destinasyon/ege-bolgesi" onClick={() => setIsMobileMenuOpen(false)} className="pl-6 font-medium text-gray-500 hover:text-gray-900 transition-colors py-1">Ege Bölgesi</Link>
+                    <Link to="/destinasyon/akdeniz" onClick={() => setIsMobileMenuOpen(false)} className="pl-6 font-medium text-gray-500 hover:text-gray-900 transition-colors py-1">Akdeniz</Link>
+                    <Link to="/destinasyon/marmara" onClick={() => setIsMobileMenuOpen(false)} className="pl-6 font-medium text-gray-500 hover:text-gray-900 transition-colors py-1">Marmara</Link>
+                    <Link to="/destinasyon/karadeniz" onClick={() => setIsMobileMenuOpen(false)} className="pl-6 font-medium text-gray-500 hover:text-gray-900 transition-colors py-1">Karadeniz</Link>
+                    <Link to="/destinasyon/ic-anadolu" onClick={() => setIsMobileMenuOpen(false)} className="pl-6 font-medium text-gray-500 hover:text-gray-900 transition-colors py-1">İç Anadolu</Link>
+                    <Link to="/destinasyon/kapadokya" onClick={() => setIsMobileMenuOpen(false)} className="pl-6 font-medium text-gray-500 hover:text-gray-900 transition-colors py-1">Kapadokya</Link>
+                  </div>
+                );
+              }
               if (link.title === 'Rota Planla') {
                 return (
                   <Link key={idx} to={link.url} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 font-medium text-orange-600 hover:text-orange-700 transition-colors px-2 py-1">
                     <MapIcon className="w-5 h-5" />
+                    {link.title}
+                  </Link>
+                );
+              }
+              if (link.title === 'Harita') {
+                return (
+                  <Link key={idx} to={link.url} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 font-medium text-gray-600 hover:text-gray-900 transition-colors px-2 py-1">
+                    <Compass className="w-5 h-5" />
                     {link.title}
                   </Link>
                 );
@@ -154,13 +205,18 @@ function PublicLayout() {
                 </Link>
               );
             })}
+            
+            {/* Ensure Harita is shown if missing from wp settings */}
+            {!siteSettings?.top_links?.some(l => l.title === 'Harita') && (
+              <Link to="/harita" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 font-medium text-gray-600 hover:text-gray-900 transition-colors px-2 py-1">
+                <Compass className="w-5 h-5" />
+                Harita
+              </Link>
+            )}
             <div className="border-t border-gray-100 pt-4 mt-2">
               <div className="flex justify-center mb-4">
                 <UserMenu />
               </div>
-              <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-all font-medium">
-                Admin Paneli
-              </Link>
             </div>
           </div>
         )}

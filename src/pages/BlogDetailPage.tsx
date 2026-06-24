@@ -4,6 +4,7 @@ import { Compass, Calendar, Clock, Share2, Facebook, Twitter, MapPin, Bed, Chevr
 import { LazyImage } from '../components/LazyImage';
 import { NewsletterSubscription } from '../components/NewsletterSubscription';
 import { getBlogPostBySlugFromWordPress, BlogPost } from '../services/wp-api';
+import { SEO } from '../components/SEO';
 
 export function BlogDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -101,6 +102,7 @@ export function BlogDetailPage() {
 
   return (
     <div className="pt-20 bg-white">
+      <SEO id={post.id.toString()} defaultTitle={`${generatedTitle} | Geziyorum`} defaultDesc={post.excerpt} />
       
       {/* Breadcrumb */}
       <div className="bg-gray-50 border-b border-gray-100 py-3">

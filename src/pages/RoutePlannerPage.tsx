@@ -3,6 +3,7 @@ import { MapPin, GripVertical, Navigation, Trash2, Plus, ArrowRight, Save, Clock
 import { Link } from 'react-router-dom';
 import { getToursFromWordPress } from '../services/wp-api';
 import { TourListing } from '../types';
+import { SEO } from '../components/SEO';
 
 export function RoutePlannerPage() {
   const [routeItems, setRouteItems] = useState<TourListing[]>([]);
@@ -62,6 +63,7 @@ export function RoutePlannerPage() {
 
   return (
     <div className="pt-24 pb-16 min-h-screen bg-gray-50/50">
+      <SEO id="page_planner" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">

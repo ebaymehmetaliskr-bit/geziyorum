@@ -23,6 +23,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LazyImage } from '../components/LazyImage';
 import { AdminAuth } from '../components/AdminAuth';
 import { getBlogPostsFromWordPress, BlogPost } from '../services/wp-api';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('settings');
@@ -44,6 +45,20 @@ export function AdminDashboard() {
   const [settingsLogo, setSettingsLogo] = useState('');
   const [settingsFooter, setSettingsFooter] = useState('');
   const [settingsLinks, setSettingsLinks] = useState<{title: string, url: string}[]>([]);
+  const [footerLinks, setFooterLinks] = useState<{title: string, url: string}[]>([]);
+  
+  const [settingsContactAddress, setSettingsContactAddress] = useState('Beşiktaş, İstanbul\nTürkiye');
+  const [settingsContactPhone, setSettingsContactPhone] = useState('+90 (212) 555 0123');
+  const [settingsContactEmail, setSettingsContactEmail] = useState('iletisim@geziyorum.com');
+  const [legalLinks, setLegalLinks] = useState<{title: string, url: string}[]>([
+    { title: 'Kullanım Koşulları', url: '/kullanim-kosullari' },
+    { title: 'Gizlilik Politikası', url: '/gizlilik' },
+    { title: 'Çerez Politikası', url: '/cerezler' },
+    { title: 'KVKK Aydınlatma Metni', url: '/kvkk' }
+  ]);
+  const [settingsInstagram, setSettingsInstagram] = useState('https://instagram.com/geziyorum');
+  const [settingsFacebook, setSettingsFacebook] = useState('https://facebook.com/geziyorum');
+  const [settingsTwitter, setSettingsTwitter] = useState('https://twitter.com/geziyorum');
 
   // SEO State
   const [seoItems, setSeoItems] = useState<any[]>([]);
@@ -84,13 +99,26 @@ export function AdminDashboard() {
         if (parsed.site_logo_url) setSettingsLogo(parsed.site_logo_url);
         if (parsed.footer_text) setSettingsFooter(parsed.footer_text);
         if (parsed.top_links) setSettingsLinks(parsed.top_links);
+        if (parsed.footer_links) setFooterLinks(parsed.footer_links);
+        if (parsed.contact_address) setSettingsContactAddress(parsed.contact_address);
+        if (parsed.contact_phone) setSettingsContactPhone(parsed.contact_phone);
+        if (parsed.contact_email) setSettingsContactEmail(parsed.contact_email);
+        if (parsed.legal_links) setLegalLinks(parsed.legal_links);
+        if (parsed.social_instagram) setSettingsInstagram(parsed.social_instagram);
+        if (parsed.social_facebook) setSettingsFacebook(parsed.social_facebook);
+        if (parsed.social_twitter) setSettingsTwitter(parsed.social_twitter);
       } else {
         // Defaults
         setSettingsLinks([
           { title: 'Destinasyonlar', url: '/destinasyon/ege-bolgesi' },
-          { title: 'Harita', url: '/harita' },
           { title: 'Rota Planla', url: '/rota-planlayici' },
           { title: 'Blog', url: '/blog' }
+        ]);
+        setFooterLinks([
+          { title: 'Ege Kıyıları', url: '/destinasyon/ege-bolgesi' },
+          { title: 'Akdeniz Rotaları', url: '/destinasyon/akdeniz' },
+          { title: 'Kapadokya Turu', url: '/destinasyon/kapadokya' },
+          { title: 'Gezi Rehberleri', url: '/blog' }
         ]);
       }
     } catch(e) {}
@@ -107,6 +135,14 @@ export function AdminDashboard() {
     existing.site_logo_url = settingsLogo;
     existing.footer_text = settingsFooter;
     existing.top_links = settingsLinks;
+    existing.footer_links = footerLinks;
+    existing.contact_address = settingsContactAddress;
+    existing.contact_phone = settingsContactPhone;
+    existing.contact_email = settingsContactEmail;
+    existing.legal_links = legalLinks;
+    existing.social_instagram = settingsInstagram;
+    existing.social_facebook = settingsFacebook;
+    existing.social_twitter = settingsTwitter;
     
     localStorage.setItem('geziyorum_settings', JSON.stringify(existing));
     
@@ -125,14 +161,42 @@ export function AdminDashboard() {
     setIsLoadingSeo(true);
     try {
       const WP_URL = import.meta.env.VITE_WP_API_URL || 'https://www.geziyorumturkiye.com';
+      const localSeo = JSON.parse(localStorage.getItem('geziyorum_seo') || '{}');
+      
+      const staticPages = [
+        {
+          id: 'page_home',
+          type: 'Sabit Sayfa',
+          title: 'Ana Sayfa',
+          path: '/',
+          metaTitle: localSeo['page_home']?.metaTitle || 'Geziyorum Türkiye - Keşfedilmeyi Bekleyen Rotalar',
+          metaDesc: localSeo['page_home']?.metaDesc || 'Türkiye\'nin en güzel rotalarını ve gizli kalmış güzelliklerini keşfedin.'
+        },
+        {
+          id: 'page_map',
+          type: 'Sabit Sayfa',
+          title: 'İnteraktif Harita',
+          path: '/harita',
+          metaTitle: localSeo['page_map']?.metaTitle || 'İnteraktif Türkiye Haritası | Geziyorum',
+          metaDesc: localSeo['page_map']?.metaDesc || 'Türkiye üzerindeki turistik noktaları interaktif haritamız ile keşfedin.'
+        },
+        {
+          id: 'page_planner',
+          type: 'Sabit Sayfa',
+          title: 'Rota Planlayıcı',
+          path: '/rota-planlayici',
+          metaTitle: localSeo['page_planner']?.metaTitle || 'Akıllı Rota Planlayıcı | Geziyorum',
+          metaDesc: localSeo['page_planner']?.metaDesc || 'Size özel tatil ve gezi rotanızı yapay zeka destekli aracımızla saniyeler içinde oluşturun.'
+        }
+      ];
+
       const res = await fetch(`${WP_URL}/wp-json/wp/v2/posts?per_page=15`);
       if (res.ok) {
         const data = await res.json();
-        const localSeo = JSON.parse(localStorage.getItem('geziyorum_seo') || '{}');
         const mapped = data.map((post: any) => {
           const local = localSeo[post.id] || {};
           return {
-            id: post.id,
+            id: post.id.toString(),
             type: 'Blog / Destinasyon',
             title: post.title.rendered,
             path: `/blog/${post.slug}`,
@@ -140,15 +204,30 @@ export function AdminDashboard() {
             metaDesc: local.metaDesc || post.excerpt?.rendered?.replace(/(<([^>]+)>)/gi, "").substring(0, 100) || ''
           };
         });
-        setSeoItems(mapped);
+        setSeoItems([...staticPages, ...mapped]);
+      } else {
+        setSeoItems(staticPages);
       }
     } catch (e) {
       console.warn("Failed to load SEO items", e);
+      // Fallback
+      const localSeo = JSON.parse(localStorage.getItem('geziyorum_seo') || '{}');
+      const staticPages = [
+        {
+          id: 'page_home',
+          type: 'Sabit Sayfa',
+          title: 'Ana Sayfa',
+          path: '/',
+          metaTitle: localSeo['page_home']?.metaTitle || 'Geziyorum Türkiye - Keşfedilmeyi Bekleyen Rotalar',
+          metaDesc: localSeo['page_home']?.metaDesc || 'Türkiye\'nin en güzel rotalarını ve gizli kalmış güzelliklerini keşfedin.'
+        }
+      ];
+      setSeoItems(staticPages);
     }
     setIsLoadingSeo(false);
   };
 
-  const handleSeoChange = (id: number, field: string, value: string) => {
+  const handleSeoChange = (id: string, field: string, value: string) => {
     setSeoItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
@@ -176,6 +255,34 @@ export function AdminDashboard() {
   const handleRemoveLink = (index: number) => {
      setSettingsLinks(settingsLinks.filter((_, i) => i !== index));
   };
+
+  const handleUpdateFooterLink = (index: number, field: string, value: string) => {
+     setFooterLinks(prev => prev.map((link, i) => i === index ? { ...link, [field]: value } : link));
+  };
+
+  const handleAddFooterLink = () => {
+     setFooterLinks([...footerLinks, { title: 'Yeni Link', url: '/' }]);
+  };
+
+  const handleRemoveFooterLink = (index: number) => {
+     setFooterLinks(footerLinks.filter((_, i) => i !== index));
+  };
+
+  const revenueData = [
+    { day: '1 Haz', rev: 600 }, { day: '2 Haz', rev: 825 }, { day: '3 Haz', rev: 450 },
+    { day: '4 Haz', rev: 1200 }, { day: '5 Haz', rev: 975 }, { day: '6 Haz', rev: 675 },
+    { day: '7 Haz', rev: 1350 }, { day: '8 Haz', rev: 1500 }, { day: '9 Haz', rev: 1125 },
+    { day: '10 Haz', rev: 750 }, { day: '11 Haz', rev: 1275 }, { day: '12 Haz', rev: 1650 },
+    { day: '13 Haz', rev: 1425 }, { day: '14 Haz', rev: 900 }
+  ];
+
+  const trafficData = [
+    { day: '1 Haz', users: 3200 }, { day: '2 Haz', users: 3800 }, { day: '3 Haz', users: 3100 },
+    { day: '4 Haz', users: 4500 }, { day: '5 Haz', users: 4100 }, { day: '6 Haz', users: 3900 },
+    { day: '7 Haz', users: 5200 }, { day: '8 Haz', users: 5800 }, { day: '9 Haz', users: 5100 },
+    { day: '10 Haz', users: 4300 }, { day: '11 Haz', users: 4900 }, { day: '12 Haz', users: 6100 },
+    { day: '13 Haz', users: 5700 }, { day: '14 Haz', users: 4800 }
+  ];
 
   return (
     <AdminAuth>
@@ -646,23 +753,20 @@ export function AdminDashboard() {
                 {/* Performance Chart Mock */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
                   <h3 className="font-bold text-gray-900 mb-6">Gelir Trendi (Günlük)</h3>
-                  <div className="h-64 flex items-end gap-2 px-2">
-                    {/* Mock Bars */}
-                    {[40, 55, 30, 80, 65, 45, 90, 100, 75, 50, 85, 110, 95, 60].map((height, i) => (
-                      <div key={i} className="flex-1 flex flex-col justify-end group">
-                         <div className="w-full bg-orange-100 hover:bg-orange-500 transition-colors rounded-t-sm relative" style={{ height: `${height}%` }}>
-                           {/* Tooltip on hover */}
-                           <div className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-bold py-1 px-2 rounded pointer-events-none transition-opacity whitespace-nowrap z-10">
-                             ₺{height * 15}
-                           </div>
-                         </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-4 text-xs font-bold text-gray-400">
-                    <span>1 Haz</span>
-                    <span>7 Haz</span>
-                    <span>14 Haz</span>
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `₺${val}`} />
+                        <RechartsTooltip 
+                          cursor={{ fill: '#f8fafc' }}
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                          formatter={(value) => [`₺${value}`, 'Gelir']}
+                        />
+                        <Bar dataKey="rev" fill="#f97316" radius={[4, 4, 0, 0]} barSize={28} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
 
@@ -782,6 +886,30 @@ export function AdminDashboard() {
                   <h3 className="text-gray-500 text-sm font-bold mb-1">Hemen Çıkma Oranı</h3>
                   <div className="text-3xl font-extrabold text-gray-900">42.1%</div>
                   <div className="text-sm text-green-500 font-medium mt-2">-2.4% (İyileşme)</div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-8">
+                <h3 className="font-bold text-gray-900 mb-6">Ziyaretçi Eğilimi (Son 14 Gün)</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trafficData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                      <RechartsTooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                        formatter={(value) => [value, 'Kullanıcı']}
+                      />
+                      <Area type="monotone" dataKey="users" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 
@@ -965,6 +1093,59 @@ export function AdminDashboard() {
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-indigo-500" /> Alt Bilgi (Footer) Navigasyonu</h3>
+                    <p className="text-sm text-gray-500 mt-1">Sitenizin alt kısmındaki "Hızlı Bağlantılar" bölümünde yer alan linkler.</p>
+                  </div>
+                  <button 
+                    onClick={handleAddFooterLink}
+                    className="text-sm font-bold bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-100 transition-colors"
+                  >
+                    + Yeni Link Ekle
+                  </button>
+                </div>
+                <div className="p-8">
+                  <div className="space-y-3">
+                    {footerLinks.map((link, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl group hover:border-gray-300 transition-colors">
+                        <div className="flex-1">
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Menü Metni</label>
+                          <input 
+                            type="text" 
+                            value={link.title}
+                            onChange={(e) => handleUpdateFooterLink(idx, 'title', e.target.value)}
+                            placeholder="Örn: İletişim"
+                            className="w-full px-3 py-2 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-medium"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Hedef URL Veya Slug</label>
+                          <input 
+                            type="text" 
+                            value={link.url}
+                            onChange={(e) => handleUpdateFooterLink(idx, 'url', e.target.value)}
+                            placeholder="Örn: /iletisim"
+                            className="w-full px-3 py-2 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
+                          />
+                        </div>
+                        <button 
+                          onClick={() => handleRemoveFooterLink(idx)}
+                          className="p-3 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors shrink-0 mt-5"
+                          title="Bu linki sil"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                    {footerLinks.length === 0 && (
+                      <div className="text-sm text-gray-500 text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">Gösterilecek menü linki bulunmuyor. Eklemek için sağ üstteki butonu kullanın.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-gray-100 bg-gray-50">
                   <h3 className="font-bold text-gray-900 flex items-center gap-2"><AlignLeft className="w-5 h-5 text-purple-500" /> Alt Bilgi (Footer) Açıklaması</h3>
                 </div>
@@ -977,6 +1158,135 @@ export function AdminDashboard() {
                       className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 resize-none h-32 leading-relaxed"
                     />
                     <p className="text-sm text-gray-500 mt-2">Bu yazı sitenin en alt kısmındaki açıklama bölümünde logonuzun hemen altında görünür.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 bg-gray-50">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2"><MapPin className="w-5 h-5 text-red-500" /> İletişim Bilgileri (Footer)</h3>
+                </div>
+                <div className="p-8 space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Adres</label>
+                    <textarea 
+                      value={settingsContactAddress}
+                      onChange={(e) => setSettingsContactAddress(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 resize-none h-20"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Telefon</label>
+                      <input 
+                        type="text" 
+                        value={settingsContactPhone}
+                        onChange={(e) => setSettingsContactPhone(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">E-Posta</label>
+                      <input 
+                        type="email" 
+                        value={settingsContactEmail}
+                        onChange={(e) => setSettingsContactEmail(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-teal-500" /> Yasal Bilgiler (Footer)</h3>
+                  <button 
+                    onClick={() => setLegalLinks([...legalLinks, { title: '', url: '' }])}
+                    className="text-sm font-bold bg-teal-50 text-teal-600 px-4 py-2 rounded-lg hover:bg-teal-100 transition-colors"
+                  >
+                    + Yeni Link Ekle
+                  </button>
+                </div>
+                <div className="p-8">
+                  <div className="space-y-3">
+                    {legalLinks.map((link, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                        <div className="flex-1">
+                          <input 
+                            type="text" 
+                            value={link.title}
+                            onChange={(e) => {
+                              const newLinks = [...legalLinks];
+                              newLinks[idx].title = e.target.value;
+                              setLegalLinks(newLinks);
+                            }}
+                            placeholder="Başlık"
+                            className="w-full px-3 py-2 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <input 
+                            type="text" 
+                            value={link.url}
+                            onChange={(e) => {
+                              const newLinks = [...legalLinks];
+                              newLinks[idx].url = e.target.value;
+                              setLegalLinks(newLinks);
+                            }}
+                            placeholder="URL Veya Slug"
+                            className="w-full px-3 py-2 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900"
+                          />
+                        </div>
+                        <button 
+                          onClick={() => {
+                            const newLinks = [...legalLinks];
+                            newLinks.splice(idx, 1);
+                            setLegalLinks(newLinks);
+                          }}
+                          className="p-3 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 bg-gray-50">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-pink-500" /> Sosyal Medya Linkleri (Footer)</h3>
+                </div>
+                <div className="p-8 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Instagram</label>
+                      <input 
+                        type="url" 
+                        value={settingsInstagram}
+                        onChange={(e) => setSettingsInstagram(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Facebook</label>
+                      <input 
+                        type="url" 
+                        value={settingsFacebook}
+                        onChange={(e) => setSettingsFacebook(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Twitter (X)</label>
+                      <input 
+                        type="url" 
+                        value={settingsTwitter}
+                        onChange={(e) => setSettingsTwitter(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-900"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
