@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
-import { Compass, MapPin } from 'lucide-react';
+import { Compass, MapPin, Route } from 'lucide-react';
 import { getToursFromWordPress } from '../services/wp-api';
 import { TourListing } from '../types';
 import { SEO } from '../components/SEO';
@@ -69,8 +69,9 @@ const TourMarker: React.FC<{ tour: TourListing }> = ({ tour }) => {
 }
 
 export function MapPage() {
-  const [tours, setTours] = React.useState<TourListing[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [tours, setTours] = useState<TourListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showRoute, setShowRoute] = useState(false);
 
   useEffect(() => {
     getToursFromWordPress().then((data) => {
@@ -78,6 +79,15 @@ export function MapPage() {
       setLoading(false);
     });
   }, []);
+
+  // Batıdan doğuya doğru sıralanmış noktalarla bir rota oluşturalım
+  const routePositions = React.useMemo(() => {
+    if (!showRoute) return [];
+    return [...tours]
+      .filter(t => t.coordinates)
+      .sort((a, b) => a.coordinates!.lng - b.coordinates!.lng)
+      .map(t => [t.coordinates!.lat, t.coordinates!.lng] as [number, number]);
+  }, [tours, showRoute]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] relative">
@@ -87,9 +97,20 @@ export function MapPage() {
           <Compass className="w-5 h-5 text-orange-500" />
           İnteraktif Türkiye Haritası
         </h1>
-        <p className="text-gray-500 text-sm mt-2 leading-relaxed">
+        <p className="text-gray-500 text-sm mt-2 leading-relaxed mb-4">
           Harita üzerindeki noktalara tıklayarak turları ve rotaları detaylıca inceleyebilirsiniz.
         </p>
+        <button 
+          onClick={() => setShowRoute(!showRoute)}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold transition-all ${
+            showRoute 
+              ? 'bg-orange-100 text-orange-600 border border-orange-200' 
+              : 'bg-gray-900 text-white hover:bg-gray-800'
+          }`}
+        >
+          <Route className="w-4 h-4" />
+          {showRoute ? 'Güzergah Çizgisini Gizle' : 'Tur Güzergahını Göster'}
+        </button>
       </div>
       
       <div className="flex-1 w-full bg-gray-100 relative z-0">
@@ -111,6 +132,12 @@ export function MapPage() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            {showRoute && routePositions.length > 1 && (
+              <Polyline 
+                positions={routePositions} 
+                pathOptions={{ color: '#f97316', weight: 4, opacity: 0.8, dashArray: '10, 10' }} 
+              />
+            )}
             {tours.map((tour) => (
               <TourMarker key={tour.id} tour={tour} />
             ))}
