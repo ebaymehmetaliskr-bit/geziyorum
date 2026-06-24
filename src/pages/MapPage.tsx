@@ -72,6 +72,9 @@ export function MapPage() {
   const [tours, setTours] = useState<TourListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRoute, setShowRoute] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [map, setMap] = useState<L.Map | null>(null);
 
   useEffect(() => {
     getToursFromWordPress().then((data) => {
@@ -79,6 +82,32 @@ export function MapPage() {
       setLoading(false);
     });
   }, []);
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert('Tarayıcınız konum servisini desteklemiyor.');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        setIsLocating(false);
+        if (map) {
+          map.flyTo([latitude, longitude], 9, {
+            animate: true,
+            duration: 1.5
+          });
+        }
+      },
+      (error) => {
+        setIsLocating(false);
+        alert('Konum alınamadı. Lütfen konum izinlerini kontrol edin.');
+      }
+    );
+  };
 
   // Batıdan doğuya doğru sıralanmış noktalarla bir rota oluşturalım
   const routePositions = React.useMemo(() => {
@@ -88,6 +117,16 @@ export function MapPage() {
       .sort((a, b) => a.coordinates!.lng - b.coordinates!.lng)
       .map(t => [t.coordinates!.lat, t.coordinates!.lng] as [number, number]);
   }, [tours, showRoute]);
+
+  // Custom blue marker for user location
+  const userIcon = React.useMemo(() => new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  }), []);
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] relative">
@@ -100,17 +139,28 @@ export function MapPage() {
         <p className="text-gray-500 text-sm mt-2 leading-relaxed mb-4">
           Harita üzerindeki noktalara tıklayarak turları ve rotaları detaylıca inceleyebilirsiniz.
         </p>
-        <button 
-          onClick={() => setShowRoute(!showRoute)}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold transition-all ${
-            showRoute 
-              ? 'bg-orange-100 text-orange-600 border border-orange-200' 
-              : 'bg-gray-900 text-white hover:bg-gray-800'
-          }`}
-        >
-          <Route className="w-4 h-4" />
-          {showRoute ? 'Güzergah Çizgisini Gizle' : 'Tur Güzergahını Göster'}
-        </button>
+        <div className="flex flex-col gap-2">
+          <button 
+            onClick={() => setShowRoute(!showRoute)}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold transition-all ${
+              showRoute 
+                ? 'bg-orange-100 text-orange-600 border border-orange-200' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Route className="w-4 h-4" />
+            {showRoute ? 'Güzergah Çizgisini Gizle' : 'Tur Güzergahını Göster'}
+          </button>
+          
+          <button 
+            onClick={handleLocateMe}
+            disabled={isLocating}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold bg-gray-900 text-white hover:bg-gray-800 transition-all disabled:opacity-70"
+          >
+            <MapPin className={`w-4 h-4 ${isLocating ? 'animate-bounce' : ''}`} />
+            {isLocating ? 'Konum Bulunuyor...' : 'Etrafımda Neler Var?'}
+          </button>
+        </div>
       </div>
       
       <div className="flex-1 w-full bg-gray-100 relative z-0">
@@ -127,6 +177,7 @@ export function MapPage() {
             zoom={6} 
             style={{ height: '100%', width: '100%' }}
             zoomControl={true}
+            ref={setMap}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -141,6 +192,16 @@ export function MapPage() {
             {tours.map((tour) => (
               <TourMarker key={tour.id} tour={tour} />
             ))}
+            {userLocation && (
+              <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
+                <Popup closeButton={false} className="custom-popup">
+                  <div className="p-3 text-center">
+                    <div className="font-bold text-gray-900 text-sm">Sizin Konumunuz</div>
+                    <div className="text-xs text-gray-500 mt-1">Yakınınızdaki rotaları inceleyin.</div>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
           </MapContainer>
         )}
       </div>
