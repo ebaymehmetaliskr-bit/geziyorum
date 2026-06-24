@@ -9,7 +9,7 @@ import { BlogCategoryPage } from './pages/BlogCategoryPage';
 import { MapPage } from './pages/MapPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { RoutePlannerPage } from './pages/RoutePlannerPage';
-import { ProfilePage } from './pages/ProfilePage';
+import { UserDashboard } from './pages/UserDashboard';
 import { SmartSearchModal } from './components/SmartSearchModal';
 import { Footer } from './components/Footer';
 import { UserMenu } from './components/UserMenu';
@@ -247,10 +247,10 @@ export default function App() {
         <Route path="/blog" element={<BlogCategoryPage />} />
         <Route path="/blog/kategori/:categorySlug" element={<BlogCategoryPage />} />
         <Route path="/blog/:slug" element={<BlogDetailPage />} />
-        <Route path="/profil/*" element={<ProfilePage />} />
       </Route>
       
       <Route path="/admin/*" element={<AdminDashboard />} />
+      <Route path="/profil/*" element={<UserDashboard />} />
     </Routes>
   );
 }
