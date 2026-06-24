@@ -18,8 +18,6 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { LazyImage } from '../components/LazyImage';
 import { AdminAuth } from '../components/AdminAuth';
-import { auth } from '../lib/firebase';
-import { signOut } from 'firebase/auth';
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('settings');
@@ -28,8 +26,8 @@ export function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
-      navigate('/');
+      localStorage.removeItem('admin_auth');
+      window.location.href = '/';
     } catch(e) {}
   };
 

@@ -32,7 +32,17 @@ if (import.meta.env.VITE_FIREBASE_API_KEY) {
   dbId = localConfig?.firestoreDatabaseId;
 }
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = dbId ? getFirestore(app, dbId) : getFirestore(app);
+let app;
+let auth: any = null;
+let db: any = null;
+
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = dbId ? getFirestore(app, dbId) : getFirestore(app);
+} catch (error) {
+  console.error("Firebase initialization error (often due to iframe cross-origin storage restrictions):", error);
+}
+
+export { auth, db };
 

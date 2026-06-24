@@ -1,8 +1,10 @@
 import { TourListing } from '../types';
 import { TOUR_LISTINGS } from '../data';
 
-const WP_URL = import.meta.env.VITE_WP_API_URL || 'https://www.geziyorumturkiye.com';
-const WP_API_BASE = `${WP_URL}/wp-json/wp/v2`;
+// Use local proxy in dev to avoid CORS, or use the actual URL if we are in production without a server
+// Actually, since we now have an Express server in production as well, we can just use /api/wp
+const WP_URL = import.meta.env.VITE_WP_API_URL || '/api/wp';
+const WP_API_BASE = WP_URL === '/api/wp' ? WP_URL : `${WP_URL}/wp-json/wp/v2`;
 
 export interface SiteSettings {
   name: string;
@@ -37,7 +39,9 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
   };
 
   try {
-    const response = await fetch(`${WP_URL}/wp-json/`);
+    // Use the proxy for the base wp-json as well if needed, or reconstruct
+    const baseWpJsonUrl = WP_URL === '/api/wp' ? '/api/wp_base' : `${WP_URL}/wp-json/`;
+    const response = await fetch(baseWpJsonUrl);
     if (!response.ok) {
        return {
          name: localSettings.name || 'Geziyorum',
@@ -293,6 +297,7 @@ export async function getTourByIdFromWordPress(id: string): Promise<TourListing 
       title: tour.title?.rendered || 'İsimsiz Rota',
       slug: tour.slug,
       description: cleanDescription || '',
+      content: tour.content?.rendered || '',
       location: {
         province: tour.tour_location || acf.province || "Bilinmiyor",
         district: acf.district || ""

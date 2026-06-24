@@ -15,6 +15,7 @@ export interface TourListing {
   title: string;
   slug: string;
   description: string;
+  content?: string;
   location: Location;
   coordinates: Coordinates;
   categories: Category[];

@@ -422,7 +422,7 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
                 <Clock className="w-6 h-6 text-gray-400" />
                 <div>
                   <div className="text-sm text-gray-500 font-medium">Süre</div>
-                  <div className="font-bold text-gray-900">{listing.duration_days} Gün</div>
+                  <div className="font-bold text-gray-900">{listing.duration_days}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -628,8 +628,8 @@ export function SingleListingLayout({ listing, onBack }: SingleListingLayoutProp
               {/* Header */}
               <div className="flex justify-between items-end mb-6">
                 <div>
-                  <span className="text-gray-500 text-sm font-medium">Kişi başı</span>
-                  <div className="text-3xl font-extrabold text-gray-900 mt-1">₺{listing.price_try}</div>
+                  <span className="text-gray-500 text-sm font-medium">Başlangıç Fiyatı</span>
+                  <div className="text-3xl font-extrabold text-gray-900 mt-1">{listing.display_price || `₺${listing.price_try}`}</div>
                 </div>
                 <div className="text-sm font-bold flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-1.5 rounded-lg border border-green-100">
                   <Star className="w-4 h-4 fill-green-700" /> {listing.rating}
