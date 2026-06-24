@@ -4,7 +4,7 @@ import { RouteWizard } from '../components/RouteWizard';
 import { DirectoryGrid } from '../components/DirectoryGrid';
 import { TourListing } from '../types';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { getToursFromWordPress } from '../services/wp-api';
+import { getToursFromWordPress, getBlogPostsFromWordPress } from '../services/wp-api';
 import { MapPin, ArrowRight, Mail } from 'lucide-react';
 import { LazyImage } from '../components/LazyImage';
 
@@ -13,6 +13,7 @@ export function HomePage() {
   const [searchParams] = useSearchParams();
   
   const [listings, setListings] = useState<TourListing[]>([]);
+  const [blogPosts, setBlogPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
 
@@ -29,6 +30,10 @@ export function HomePage() {
       }
       setHasMore(data.length === 9);
       setIsLoading(false);
+    });
+
+    getBlogPostsFromWordPress(3).then(data => {
+      setBlogPosts(data);
     });
   }, [pageParam]);
 
@@ -139,17 +144,13 @@ export function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-            {[
-              { id: 1, title: 'Göcek Koyları İçin Tekne Turu Tavsiyeleri', img: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80', tag: 'Rehber' },
-              { id: 2, title: 'Sonbaharda Kapadokya Bir Başka Güzel: Detaylı Gezi Rotası', img: 'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?auto=format&fit=crop&w=600&q=80', tag: 'İlham' },
-              { id: 3, title: 'Ege Köylerinde Gizli Kalmış 5 Butik Otel', img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80', tag: 'Konaklama' }
-            ].map(post => (
-              <Link to={`/blog/rehber-${post.id}`} key={post.id} className="group flex flex-col">
+            {blogPosts.length > 0 ? blogPosts.map((post) => (
+              <Link to={`/blog/${post.slug}`} key={post.id} className="group flex flex-col">
                 <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-5 bg-gray-100">
                   <LazyImage src={post.img} alt={post.title} wrapperClassName="w-full h-full" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="flex-1 flex flex-col">
-                  <span className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">{post.tag}</span>
+                  <span className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">{post.categoryName || 'Rehber'}</span>
                   <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-3 leading-snug">
                     {post.title}
                   </h3>
@@ -159,7 +160,9 @@ export function HomePage() {
                   </div>
                 </div>
               </Link>
-            ))}
+            )) : (
+              <div className="col-span-3 text-center text-gray-500 py-10">Blog yazıları yükleniyor veya bulunamadı...</div>
+            )}
           </div>
         </div>
       </section>

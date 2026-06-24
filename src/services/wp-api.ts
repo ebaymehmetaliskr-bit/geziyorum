@@ -1,10 +1,10 @@
 import { TourListing } from '../types';
 import { TOUR_LISTINGS } from '../data';
 
-// Use local proxy in dev to avoid CORS, or use the actual URL if we are in production without a server
-// Actually, since we now have an Express server in production as well, we can just use /api/wp
-const WP_URL = import.meta.env.VITE_WP_API_URL || '/api/wp';
-const WP_API_BASE = WP_URL === '/api/wp' ? WP_URL : `${WP_URL}/wp-json/wp/v2`;
+// Always use the local proxy to avoid CORS issues.
+// The proxy in server.ts handles routing to VITE_WP_API_URL.
+const WP_URL = '/api/wp';
+const WP_API_BASE = WP_URL;
 
 export interface SiteSettings {
   name: string;

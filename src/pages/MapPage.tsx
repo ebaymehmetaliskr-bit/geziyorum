@@ -5,12 +5,9 @@ import { Compass, MapPin } from 'lucide-react';
 import { getToursFromWordPress } from '../services/wp-api';
 import { TourListing } from '../types';
 
-const API_KEY =
-  process.env.GOOGLE_MAPS_PLATFORM_KEY ||
-  (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
-  (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
-  '';
-const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
+const rawKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || '';
+const API_KEY = rawKey !== 'YOUR_API_KEY' ? rawKey : '';
+const hasValidKey = Boolean(API_KEY);
 
 const TourMarker: React.FC<{ tour: TourListing }> = ({ tour }) => {
   const [markerRef, marker] = useAdvancedMarkerRef();

@@ -13,11 +13,16 @@ import {
   MapPin,
   TrendingUp,
   AlertCircle,
-  Search
+  Search,
+  Trash2,
+  AlignLeft,
+  ExternalLink,
+  Edit
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LazyImage } from '../components/LazyImage';
 import { AdminAuth } from '../components/AdminAuth';
+import { getBlogPostsFromWordPress, BlogPost } from '../services/wp-api';
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('settings');
@@ -44,12 +49,30 @@ export function AdminDashboard() {
   const [seoItems, setSeoItems] = useState<any[]>([]);
   const [isLoadingSeo, setIsLoadingSeo] = useState(false);
 
+  // Content State
+  const [wpPosts, setWpPosts] = useState<BlogPost[]>([]);
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
+
   // Load SEO items on mount/tab change
   useEffect(() => {
     if (activeTab === 'seo' && seoItems.length === 0) {
       loadSeoItems();
     }
+    if (activeTab === 'content' && wpPosts.length === 0) {
+      loadWpContent();
+    }
   }, [activeTab]);
+
+  const loadWpContent = async () => {
+    setIsLoadingContent(true);
+    try {
+      const posts = await getBlogPostsFromWordPress(20, '');
+      setWpPosts(posts);
+    } catch (e) {
+      console.warn("Failed to load WP posts", e);
+    }
+    setIsLoadingContent(false);
+  };
 
   // Load existing settings
   useState(() => {
@@ -367,22 +390,134 @@ export function AdminDashboard() {
           )}
 
           {activeTab === 'content' && (
-            <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
-               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
-                 <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                   <RefreshCw className={`w-10 h-10 text-blue-500 ${isSyncing ? 'animate-spin' : ''}`} />
+            <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+               <div className="flex items-center justify-between mb-8">
+                 <div>
+                   <h2 className="text-2xl font-bold text-gray-900">İçerik Yönetimi</h2>
+                   <p className="text-gray-500 mt-1">WordPress blog içeriklerinizi görüntüleyin ve yönetin.</p>
                  </div>
-                 <h2 className="text-2xl font-bold text-gray-900 mb-4">WordPress REST API Bağlantısı Aktif</h2>
-                 <p className="text-gray-500 max-w-lg mx-auto mb-8">
-                   Sistem şu anda <a href="#" className="text-blue-500 font-bold hover:underline">geziyorumturkiye.com</a> adresi ile başarılı bir şekilde haberleşiyor. İçerik güncellemeleri otomatik sağlanır. Ancak hemen senkronize etmek için aşağıdaki butonu kullanabilirsiniz.
-                 </p>
-                 <button 
-                   onClick={handleSync}
-                   disabled={isSyncing}
-                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-colors disabled:opacity-50"
-                 >
-                   {isSyncing ? 'Senkronize Ediliyor...' : 'Manuel Veri Çekme İşlemini Başlat'}
-                 </button>
+                 <div className="flex items-center gap-4">
+                   <button 
+                     onClick={loadWpContent}
+                     disabled={isLoadingContent}
+                     className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-xl transition-colors disabled:opacity-50 shadow-sm"
+                   >
+                     <RefreshCw className={`w-4 h-4 ${isLoadingContent ? 'animate-spin' : ''}`} />
+                     Yenile
+                   </button>
+                   <button 
+                     onClick={handleSync}
+                     disabled={isSyncing}
+                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                   >
+                     <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                     {isSyncing ? 'Senkronize Ediliyor...' : 'Manuel Tetikle'}
+                   </button>
+                 </div>
+               </div>
+
+               {/* Connection Status Card */}
+               <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 flex items-start gap-4 shadow-sm mb-8">
+                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 shadow-sm text-blue-600">
+                   <LinkIcon className="w-6 h-6" />
+                 </div>
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-900 mb-1">WordPress REST API Bağlantısı Aktif</h3>
+                   <p className="text-sm text-gray-600">
+                     Sistem şu anda <strong>geziyorumturkiye.com</strong> ile başarılı bir şekilde haberleşiyor. 
+                     Aşağıdaki liste doğrudan canlı web sitenizden çekilen içeriklerdir.
+                   </p>
+                 </div>
+               </div>
+
+               {/* Content Table / Cards */}
+               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                 <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                   <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                     <FileText className="w-5 h-5 text-orange-500" />
+                     Son Yayınlanan Blog Yazıları
+                   </h3>
+                   <span className="bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full">
+                     {wpPosts.length} İçerik Gösteriliyor
+                   </span>
+                 </div>
+                 
+                 <div className="overflow-x-auto">
+                   <table className="w-full text-left border-collapse">
+                     <thead>
+                       <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500 font-bold">
+                         <th className="p-4 w-16">Görsel</th>
+                         <th className="p-4">Başlık & URL</th>
+                         <th className="p-4">Kategori</th>
+                         <th className="p-4 w-32 text-center">İşlemler</th>
+                       </tr>
+                     </thead>
+                     <tbody className="divide-y divide-gray-100">
+                       {isLoadingContent ? (
+                         <tr>
+                           <td colSpan={4} className="p-12 text-center text-gray-500">
+                             <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+                             İçerikler Yükleniyor...
+                           </td>
+                         </tr>
+                       ) : wpPosts.length === 0 ? (
+                         <tr>
+                           <td colSpan={4} className="p-12 text-center text-gray-500">
+                             İçerik bulunamadı.
+                           </td>
+                         </tr>
+                       ) : (
+                         wpPosts.map(post => (
+                           <tr key={`wp-post-${post.id}`} className="hover:bg-gray-50/50 transition-colors group">
+                             <td className="p-4">
+                               <div className="w-16 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                                 {post.img ? (
+                                   <LazyImage src={post.img} alt={post.title} className="w-full h-full object-cover" />
+                                 ) : (
+                                   <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                     <FileText className="w-5 h-5" />
+                                   </div>
+                                 )}
+                               </div>
+                             </td>
+                             <td className="p-4">
+                               <div className="font-bold text-gray-900 line-clamp-1 mb-1">{post.title}</div>
+                               <div className="text-xs text-blue-600 font-medium line-clamp-1">
+                                 /blog/{post.slug}
+                               </div>
+                             </td>
+                             <td className="p-4">
+                               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-100">
+                                 {post.categoryName || 'Genel'}
+                               </span>
+                             </td>
+                             <td className="p-4 text-center">
+                               <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <Link 
+                                   to={`/blog/${post.slug}`}
+                                   target="_blank"
+                                   className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                   title="Sitede Görüntüle"
+                                 >
+                                   <Eye className="w-4 h-4" />
+                                 </Link>
+                                 <a 
+                                   href={`https://geziyorumturkiye.com/wp-admin/post.php?post=${post.id}&action=edit`}
+                                   target="_blank"
+                                   rel="noreferrer"
+                                   className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                   title="WordPress'te Düzenle"
+                                 >
+                                   <Edit className="w-4 h-4" />
+                                 </a>
+                               </div>
+                             </td>
+                           </tr>
+                         ))
+                       )}
+                     </tbody>
+                   </table>
+                 </div>
                </div>
             </div>
           )}
@@ -723,120 +858,126 @@ export function AdminDashboard() {
             <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Sistem ve Marka Ayarları</h2>
-                  <p className="text-gray-500 mt-1">Logo, site ismi ve alt bilgi (footer) alanlarını özelleştirin.</p>
+                  <h2 className="text-2xl font-bold text-gray-900">Tema ve Menü Ayarları</h2>
+                  <p className="text-gray-500 mt-1">Sitenizin üst menüsünü, logoyu ve alt bilgi (footer) alanlarını yapılandırın.</p>
                 </div>
                 <button 
                   onClick={handleSaveSettings}
                   disabled={isSavingSettings}
-                  className={`font-bold py-2 px-6 rounded-xl transition-colors ${
+                  className={`font-bold py-3 px-8 rounded-xl shadow-md transition-all ${
                     isSavingSettings
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-orange-500 hover:bg-orange-600 text-white'
+                      ? 'bg-green-500 text-white shadow-green-500/20' 
+                      : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/20 hover:-translate-y-0.5'
                   }`}
                 >
-                  {isSavingSettings ? 'Kaydedildi ✓' : 'Ayarları Kaydet'}
+                  {isSavingSettings ? 'Başarıyla Kaydedildi ✓' : 'Ayarları Yayınla'}
                 </button>
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-gray-100 bg-gray-50">
-                  <h3 className="font-bold text-gray-900">Marka ve Görsel Kimlik</h3>
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2"><MapPin className="w-5 h-5 text-orange-500" /> Marka Kimliği</h3>
                 </div>
-                <div className="p-6 space-y-6">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Site Adı</label>
-                    <input 
-                      type="text" 
-                      value={settingsName}
-                      onChange={(e) => setSettingsName(e.target.value)}
-                      placeholder="Geziyorum Türkiye"
-                      className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Logo URL (Resim Linki)</label>
-                    <div className="flex gap-4 items-start">
-                       <input 
-                         type="text" 
-                         value={settingsLogo}
-                         onChange={(e) => setSettingsLogo(e.target.value)}
-                         placeholder="https://..."
-                         className="flex-1 px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 mt-1"
-                       />
-                       {settingsLogo && (
-                         <div className="w-16 h-16 border rounded bg-gray-50 p-1 flex items-center justify-center shrink-0">
-                            <img src={settingsLogo} alt="Logo Önizleme" referrerPolicy="no-referrer" className="max-w-full max-h-full object-contain" />
-                         </div>
-                       )}
+                <div className="p-8 space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Site Adı</label>
+                      <input 
+                        type="text" 
+                        value={settingsName}
+                        onChange={(e) => setSettingsName(e.target.value)}
+                        placeholder="Geziyorum Türkiye"
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all text-gray-900 font-medium"
+                      />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Sitenizin üst menüsünde (Header) ve alt bilgisinde (Footer) görünür.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-100 bg-gray-50">
-                  <h3 className="font-bold text-gray-900">Alt Bilgi (Footer)</h3>
-                </div>
-                <div className="p-6 space-y-6">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Hakkımızda / Slogan Metni</label>
-                    <textarea 
-                      value={settingsFooter}
-                      onChange={(e) => setSettingsFooter(e.target.value)}
-                      placeholder="Türkiye'nin gizli kalmış cennetlerini..."
-                      className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 resize-none h-24"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Bu yazı sitenin en alt kısmındaki açıklama bölümünde görünür.</p>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Logo URL (Medya Kütüphanesi Bağlantısı)</label>
+                      <div className="flex gap-4 items-start">
+                        <input 
+                          type="text" 
+                          value={settingsLogo}
+                          onChange={(e) => setSettingsLogo(e.target.value)}
+                          placeholder="https://gezilistesi.com/wp-content/uploads/..."
+                          className="flex-1 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all text-gray-900 text-sm"
+                        />
+                        {settingsLogo && (
+                          <div className="w-16 h-16 border border-gray-200 rounded-xl bg-gray-50 p-2 flex items-center justify-center shrink-0 shadow-sm">
+                              <img src={settingsLogo} alt="Logo" referrerPolicy="no-referrer" className="max-w-full max-h-full object-contain" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                  <h3 className="font-bold text-gray-900">Üst Menü Bağlantıları</h3>
+                  <div>
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-blue-500" /> Üst Menü (Header) Navigasyonu</h3>
+                    <p className="text-sm text-gray-500 mt-1">Sitenizin üst kısmındaki tıklanabilir ana menü linkleri.</p>
+                  </div>
                   <button 
                     onClick={handleAddLink}
-                    className="text-sm font-bold text-orange-600 hover:text-orange-700 transition-colors"
+                    className="text-sm font-bold bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
                   >
                     + Yeni Link Ekle
                   </button>
                 </div>
-                <div className="p-6 space-y-4">
-                  {settingsLinks.map((link, idx) => (
-                    <div key={idx} className="flex items-center gap-4">
-                      <div className="flex-1">
-                         <input 
-                           type="text" 
-                           value={link.title}
-                           onChange={(e) => handleUpdateLink(idx, 'title', e.target.value)}
-                           placeholder="Link Adı"
-                           className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
-                         />
+                <div className="p-8">
+                  <div className="space-y-3">
+                    {settingsLinks.map((link, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl group hover:border-gray-300 transition-colors">
+                        <div className="flex-1">
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Menü Metni</label>
+                          <input 
+                            type="text" 
+                            value={link.title}
+                            onChange={(e) => handleUpdateLink(idx, 'title', e.target.value)}
+                            placeholder="Örn: Blog"
+                            className="w-full px-3 py-2 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Hedef URL Veya Slug</label>
+                          <input 
+                            type="text" 
+                            value={link.url}
+                            onChange={(e) => handleUpdateLink(idx, 'url', e.target.value)}
+                            placeholder="Örn: /blog"
+                            className="w-full px-3 py-2 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                          />
+                        </div>
+                        <button 
+                          onClick={() => handleRemoveLink(idx)}
+                          className="p-3 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors shrink-0 mt-5"
+                          title="Bu linki sil"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
-                      <div className="flex-1">
-                         <input 
-                           type="text" 
-                           value={link.url}
-                           onChange={(e) => handleUpdateLink(idx, 'url', e.target.value)}
-                           placeholder="/hedef-url"
-                           className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
-                         />
-                      </div>
-                      <button 
-                        onClick={() => handleRemoveLink(idx)}
-                        className="p-2 text-gray-400 hover:text-red-500 transition-colors shrink-0"
-                        title="Bu linki sil"
-                      >
-                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                      </button>
-                    </div>
-                  ))}
-                  {settingsLinks.length === 0 && (
-                    <div className="text-sm text-gray-500 text-center py-4">Gösterilecek menü linki bulunmuyor.</div>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">Bu linkler sitenizin ana üst navigasyonunda (Header) görünür.</p>
+                    ))}
+                    {settingsLinks.length === 0 && (
+                      <div className="text-sm text-gray-500 text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">Gösterilecek menü linki bulunmuyor. Eklemek için sağ üstteki butonu kullanın.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 bg-gray-50">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2"><AlignLeft className="w-5 h-5 text-purple-500" /> Alt Bilgi (Footer) Açıklaması</h3>
+                </div>
+                <div className="p-8">
+                  <div>
+                    <textarea 
+                      value={settingsFooter}
+                      onChange={(e) => setSettingsFooter(e.target.value)}
+                      placeholder="Türkiye'nin gizli kalmış cennetlerini..."
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 resize-none h-32 leading-relaxed"
+                    />
+                    <p className="text-sm text-gray-500 mt-2">Bu yazı sitenin en alt kısmındaki açıklama bölümünde logonuzun hemen altında görünür.</p>
+                  </div>
                 </div>
               </div>
 

@@ -7,28 +7,29 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  const wpUrl = process.env.VITE_WP_API_URL || process.env.WP_API_URL || 'https://gezilistesi.com';
+  let wpUrl = process.env.VITE_WP_API_URL || process.env.WP_API_URL || 'https://gezilistesi.com';
+  if (!wpUrl.startsWith('http')) {
+    wpUrl = 'https://' + wpUrl;
+  }
+  // Remove trailing slash
+  wpUrl = wpUrl.replace(/\/$/, '');
 
   // Proxy requests to WordPress to bypass CORS
   app.use('/api/wp', createProxyMiddleware({
     target: wpUrl,
     changeOrigin: true,
+    secure: false,
     pathRewrite: {
-      '^/api/wp': '/wp-json/wp/v2'
-    },
-    onProxyRes: function (proxyRes, req, res) {
-      proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+      '^/': '/wp-json/wp/v2/'
     }
   }));
 
   app.use('/api/wp_base', createProxyMiddleware({
     target: wpUrl,
     changeOrigin: true,
+    secure: false,
     pathRewrite: {
-      '^/api/wp_base': '/wp-json/'
-    },
-    onProxyRes: function (proxyRes, req, res) {
-      proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+      '^/': '/wp-json/'
     }
   }));
 
