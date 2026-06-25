@@ -59,6 +59,7 @@ export function AdminDashboard() {
   const [settingsInstagram, setSettingsInstagram] = useState('https://instagram.com/geziyorum');
   const [settingsFacebook, setSettingsFacebook] = useState('https://facebook.com/geziyorum');
   const [settingsTwitter, setSettingsTwitter] = useState('https://twitter.com/geziyorum');
+  const [settingsHeroImage, setSettingsHeroImage] = useState('https://images.unsplash.com/photo-1524230659092-07f99a75c013?auto=format&fit=crop&q=80');
 
   // SEO State
   const [seoItems, setSeoItems] = useState<any[]>([]);
@@ -107,6 +108,7 @@ export function AdminDashboard() {
         if (parsed.social_instagram) setSettingsInstagram(parsed.social_instagram);
         if (parsed.social_facebook) setSettingsFacebook(parsed.social_facebook);
         if (parsed.social_twitter) setSettingsTwitter(parsed.social_twitter);
+        if (parsed.hero_image_url) setSettingsHeroImage(parsed.hero_image_url);
       } else {
         // Defaults
         setSettingsLinks([
@@ -143,6 +145,7 @@ export function AdminDashboard() {
     existing.social_instagram = settingsInstagram;
     existing.social_facebook = settingsFacebook;
     existing.social_twitter = settingsTwitter;
+    existing.hero_image_url = settingsHeroImage;
     
     localStorage.setItem('geziyorum_settings', JSON.stringify(existing));
     
@@ -1034,6 +1037,23 @@ export function AdminDashboard() {
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Ana Sayfa Hero Görsel URL'si</label>
+                    <div className="flex gap-4 items-start">
+                      <input 
+                        type="text" 
+                        value={settingsHeroImage}
+                        onChange={(e) => setSettingsHeroImage(e.target.value)}
+                        placeholder="https://images.unsplash.com/photo-1524230659092-07f99a75c013"
+                        className="flex-1 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all text-gray-900 text-sm"
+                      />
+                      {settingsHeroImage && (
+                        <div className="w-24 h-16 border border-gray-200 rounded-xl bg-gray-50 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                            <img src={settingsHeroImage} alt="Hero" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

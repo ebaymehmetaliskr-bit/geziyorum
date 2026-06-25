@@ -4,7 +4,7 @@ import { RouteWizard } from '../components/RouteWizard';
 import { DirectoryGrid } from '../components/DirectoryGrid';
 import { TourListing } from '../types';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { getToursFromWordPress, getBlogPostsFromWordPress } from '../services/wp-api';
+  import { getToursFromWordPress, getBlogPostsFromWordPress, getSiteSettings } from '../services/wp-api';
 import { MapPin, ArrowRight, Mail } from 'lucide-react';
 import { LazyImage } from '../components/LazyImage';
 import { SEO } from '../components/SEO';
@@ -18,10 +18,20 @@ export function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
 
+  const [siteSettings, setSiteSettings] = useState<any>(null);
+
   // We keep a single flat list of listings, appending if page > 1
   const pageParam = parseInt(searchParams.get('page') || '1', 10);
 
   useEffect(() => {
+    // try to load settings from localstorage first to avoid jumping
+    try {
+        const saved = localStorage.getItem('geziyorum_settings');
+        if (saved) {
+            setSiteSettings(JSON.parse(saved));
+        }
+    } catch(e) {}
+
     setIsLoading(true);
     getToursFromWordPress(pageParam).then(data => {
       if (pageParam === 1) {
@@ -36,6 +46,12 @@ export function HomePage() {
     getBlogPostsFromWordPress(3).then(data => {
       setBlogPosts(data);
     });
+
+    getSiteSettings().then(settings => {
+      if (settings) {
+        setSiteSettings(settings);
+      }
+    });
   }, [pageParam]);
 
   const handleSelectListing = (listing: TourListing) => {
@@ -45,7 +61,7 @@ export function HomePage() {
   return (
     <>
       <SEO id="page_home" />
-      <HeroSection />
+      <HeroSection heroImageUrl={siteSettings?.hero_image_url} />
 
       {/* Rota Sihirbazı Section */}
       <section className="py-16 bg-gray-50/50 pt-24 -mt-8 relative z-10">

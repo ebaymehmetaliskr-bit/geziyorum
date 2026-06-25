@@ -23,6 +23,7 @@ export interface SiteSettings {
   social_instagram?: string;
   social_facebook?: string;
   social_twitter?: string;
+  hero_image_url?: string;
 }
 
 export async function getSiteSettings(): Promise<SiteSettings | null> {
@@ -61,6 +62,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
     social_instagram: 'https://instagram.com/geziyorum',
     social_facebook: 'https://facebook.com/geziyorum',
     social_twitter: 'https://twitter.com/geziyorum',
+    hero_image_url: 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?auto=format&fit=crop&q=80',
   };
 
   try {
@@ -85,6 +87,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
          social_instagram: localSettings.social_instagram || defaults.social_instagram,
          social_facebook: localSettings.social_facebook || defaults.social_facebook,
          social_twitter: localSettings.social_twitter || defaults.social_twitter,
+         hero_image_url: localSettings.hero_image_url || defaults.hero_image_url,
        };
     }
     
@@ -128,6 +131,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
       social_instagram: localSettings.social_instagram || defaults.social_instagram,
       social_facebook: localSettings.social_facebook || defaults.social_facebook,
       social_twitter: localSettings.social_twitter || defaults.social_twitter,
+      hero_image_url: localSettings.hero_image_url || defaults.hero_image_url,
     };
   } catch (error) {
     console.warn("Could not fetch site settings from WordPress.", error);
@@ -148,6 +152,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
       social_instagram: localSettings.social_instagram || defaults.social_instagram,
       social_facebook: localSettings.social_facebook || defaults.social_facebook,
       social_twitter: localSettings.social_twitter || defaults.social_twitter,
+      hero_image_url: localSettings.hero_image_url || defaults.hero_image_url,
     };
   }
 }

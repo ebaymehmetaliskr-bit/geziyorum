@@ -2,13 +2,14 @@ import { motion } from 'motion/react';
 import { Search, MapPin, List } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 
-export function HeroSection() {
+export function HeroSection({ heroImageUrl }: { heroImageUrl?: string }) {
+  const defaultImage = "https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?auto=format&fit=crop&w=2000&q=80";
   return (
     <div className="relative min-h-[80vh] md:min-h-screen flex text-center items-center justify-center overflow-hidden">
       {/* Background Image & Overlay */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-gray-900">
         <LazyImage
-          src="https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?auto=format&fit=crop&w=2000&q=80"
+          src={heroImageUrl || defaultImage}
           alt="Türkiye Manzarası"
           wrapperClassName="w-full h-full"
           className="w-full h-full object-cover"
