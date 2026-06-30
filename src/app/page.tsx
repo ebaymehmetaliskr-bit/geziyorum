@@ -3,13 +3,15 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { HeroSection } from '../components/HeroSection';
-import { RouteWizard } from '../components/RouteWizard';
-import { DirectoryGrid } from '../components/DirectoryGrid';
-import { TourListing } from '../types';
-import { getToursFromWordPress, getBlogPostsFromWordPress, getSiteSettings } from '../services/wp-api';
+
+// GÖRECELİ YOLLAR YERİNE NEXT.JS ALIAS (@/) YAPISI KULLANILDI
+import { HeroSection } from '@/components/HeroSection';
+import { RouteWizard } from '@/components/RouteWizard';
+import { DirectoryGrid } from '@/components/DirectoryGrid';
+import { TourListing } from '@/types';
+import { getToursFromWordPress, getBlogPostsFromWordPress, getSiteSettings } from '@/services/wp-api';
 import { MapPin, ArrowRight, Mail } from 'lucide-react';
-import { LazyImage } from '../components/LazyImage';
+import { LazyImage } from '@/components/LazyImage';
 
 function HomeContent() {
   const router = useRouter();
@@ -21,12 +23,10 @@ function HomeContent() {
   const [hasMore, setHasMore] = useState(true);
   const [siteSettings, setSiteSettings] = useState<any>(null);
 
-  // Sayfa parametresini güvenli bir şekilde alıyoruz
   const pageParamString = searchParams.get('page');
   const pageParam = parseInt(pageParamString || '1', 10);
 
   useEffect(() => {
-    // Ayarları localstorage'dan okumayı dene
     try {
         const saved = localStorage.getItem('geziyorum_settings');
         if (saved) {
@@ -64,14 +64,12 @@ function HomeContent() {
     <>
       <HeroSection heroImageUrl={siteSettings?.hero_image_url} />
 
-      {/* Rota Sihirbazı Section */}
       <section className="py-16 bg-gray-50/50 pt-24 -mt-8 relative z-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <RouteWizard />
         </div>
       </section>
 
-      {/* Featured Destinations Section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-10">
@@ -133,7 +131,6 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* AdSense Placement */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="w-full h-[120px] bg-gray-50 border border-dashed border-gray-300 rounded-2xl flex items-center justify-center text-gray-400 font-mono text-sm leading-relaxed text-center">
           Reklam Alanı<br/>(AdSense - Ana Sayfa Geniş)
@@ -153,7 +150,6 @@ function HomeContent() {
         />
       </div>
 
-      {/* Latest Blog Posts / Travel Guides */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -186,7 +182,6 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* Newsletter Section */}
       <section className="bg-gray-900 py-20 relative overflow-hidden">
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-orange-500/20 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl"></div>
