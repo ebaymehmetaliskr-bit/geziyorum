@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 export function AdminAuth({ children }: { children: React.ReactNode }) {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -57,7 +57,7 @@ export function AdminAuth({ children }: { children: React.ReactNode }) {
               Giriş yapılan hesap: <br/><strong className="text-gray-700">{user.email}</strong>
             </div>
             
-            <Link to="/" className="w-full inline-block py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors">
+            <Link href="/" className="w-full inline-block py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors">
               Ana Sayfaya Dön
             </Link>
           </div>
@@ -129,7 +129,7 @@ export function AdminAuth({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="pt-4 border-t border-gray-100">
-            <Link to="/" className="text-sm text-gray-400 hover:text-gray-600 font-medium">Ana Sayfaya Dön</Link>
+            <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 font-medium">Ana Sayfaya Dön</Link>
           </div>
         </div>
       </div>

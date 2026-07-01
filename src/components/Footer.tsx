@@ -1,5 +1,5 @@
 import { Compass, Mail, MapPin, Phone, Instagram, Facebook, Twitter, Shield, Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSiteSettings, SiteSettings } from '../services/wp-api';
 
@@ -20,7 +20,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Logo and Description */}
           <div className="col-span-1 lg:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
+            <Link href="/" className="flex items-center gap-2 mb-4">
               {siteSettings?.site_logo_url ? (
                 <img src={siteSettings.site_logo_url} alt="Logo" referrerPolicy="no-referrer" className="h-8 w-auto object-contain" />
               ) : (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { User, LogOut, Heart, Calendar } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 export function UserMenu() {
   const { user, signInWithGoogle, logout } = useAuth();
@@ -45,11 +45,11 @@ export function UserMenu() {
             <p className="text-xs text-gray-500 truncate">{user.email}</p>
           </div>
           
-          <Link to="/profil/favoriler" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-600 transition-colors">
+          <Link href="/profil/favoriler" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-600 transition-colors">
             <Heart className="w-4 h-4" />
             Favorilerim ("Wishlist")
           </Link>
-          <Link to="/profil/rezervasyonlar" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-600 transition-colors">
+          <Link href="/profil/rezervasyonlar" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-600 transition-colors">
             <Calendar className="w-4 h-4" />
             Rezervasyonlarım
           </Link>

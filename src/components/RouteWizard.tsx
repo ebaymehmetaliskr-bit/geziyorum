@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Compass, Leaf, Landmark, Utensils, PartyPopper, Calendar, ArrowRight, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 const INTERESTS = [
   { id: 'doga', label: 'Doğa & Karavan', icon: Leaf, color: 'text-green-500', bg: 'bg-green-50' },

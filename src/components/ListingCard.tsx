@@ -1,6 +1,6 @@
 import { MapPin, Star, Clock } from 'lucide-react';
 import { TourListing } from '../types';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { LazyImage } from './LazyImage';
 
 interface ListingCardProps {

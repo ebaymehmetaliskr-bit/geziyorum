@@ -20,8 +20,7 @@ const MOCK_DATA = [
 export function SmartSearchModal({ isOpen, onClose }: SmartSearchModalProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
-
+  const router = useRouter(); 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
