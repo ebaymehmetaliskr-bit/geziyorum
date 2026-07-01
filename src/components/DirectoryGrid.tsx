@@ -1,7 +1,9 @@
+"use client";
+
 import { useMemo, useState } from 'react';
 import { TourListing } from '../types';
 import { ListingCard } from './ListingCard';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 interface DirectoryGridProps {
   listings: TourListing[];
@@ -31,7 +33,8 @@ function ListingCardSkeleton() {
 }
 
 export function DirectoryGrid({ listings, onSelectListing, isLoading = false, hasMore = false }: DirectoryGridProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Local Sort state
   const [sortOption, setSortOption] = useState('recommended');
@@ -46,18 +49,22 @@ export function DirectoryGrid({ listings, onSelectListing, isLoading = false, ha
       newCategories.add(cat);
     }
 
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.delete('category');
     newCategories.forEach(c => params.append('category', c));
     params.delete('page'); // reset page when filters change
-    setSearchParams(params, { replace: true });
+    
+    // Next.js yönlendirmesi ile URL güncellenir
+    router.replace(`?${params.toString()}`, { scroll: false });
   };
 
   const loadMore = () => {
     const currentPage = parseInt(searchParams.get('page') || '1', 10);
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set('page', (currentPage + 1).toString());
-    setSearchParams(params);
+    
+    // Next.js push yöntemiyle sayfayı güncelliyoruz
+    router.push(`?${params.toString()}`, { scroll: false });
   };
 
   // Derive categories from all loaded listings

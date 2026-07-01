@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, MapPin, List } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 
