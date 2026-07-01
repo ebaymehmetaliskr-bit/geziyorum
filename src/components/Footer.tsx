@@ -1,3 +1,5 @@
+"use client";
+
 import { Compass, Mail, MapPin, Phone, Instagram, Facebook, Twitter, Shield, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -52,9 +54,9 @@ export function Footer() {
           <div>
             <h4 className="text-white font-bold mb-4 uppercase text-sm tracking-widest">Hızlı Bağlantılar</h4>
             <ul className="space-y-3">
-              {siteSettings?.footer_links?.map((link, idx) => (
+              {siteSettings?.footer_links?.map((link: any, idx: number) => (
                 <li key={idx}>
-                  <Link to={link.url} className="hover:text-orange-500 transition-colors">
+                  <Link href={link.url} className="hover:text-orange-500 transition-colors">
                     {link.title}
                   </Link>
                 </li>
@@ -85,9 +87,9 @@ export function Footer() {
           <div>
             <h4 className="text-white font-bold mb-4 uppercase text-sm tracking-widest">Yasal Bilgiler</h4>
             <ul className="space-y-3">
-              {siteSettings?.legal_links?.map((link, idx) => (
+              {siteSettings?.legal_links?.map((link: any, idx: number) => (
                 <li key={idx}>
-                  <Link to={link.url} className="hover:text-orange-500 transition-colors">{link.title}</Link>
+                  <Link href={link.url} className="hover:text-orange-500 transition-colors">{link.title}</Link>
                 </li>
               ))}
             </ul>
