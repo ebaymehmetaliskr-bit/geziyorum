@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Compass, Leaf, Landmark, Utensils, PartyPopper, Calendar, ArrowRight, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
@@ -181,18 +183,18 @@ export function RouteWizard() {
           <div className="animate-in fade-in zoom-in-95 duration-500">
              <div className="bg-gray-50 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center border border-gray-100">
                <div className="w-full md:w-1/3 aspect-square rounded-2xl overflow-hidden shrink-0 shadow-sm relative group">
-                 <img src={routeResult.img} alt={routeResult.title} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={routeResult.img} alt={routeResult.title} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                </div>
                <div className="flex-1 text-center md:text-left">
                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-widest rounded-full mb-4">
-                   <Leaf className="w-3.5 h-3.5" /> 98% Eşleşme
+                    <Leaf className="w-3.5 h-3.5" /> 98% Eşleşme
                  </div>
                  <h4 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">{routeResult.title}</h4>
                  <p className="text-gray-600 text-lg mb-6 leading-relaxed">
                    {routeResult.desc} Tercihlerinize ({INTERESTS.find(i => i.id === interest)?.label}) ve vaktinize ({DURATIONS.find(d => d.id === duration)?.label}) en uygun rotayı sizin için seçtik.
                  </p>
                  <div className="flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start">
-                   <Link to={routeResult.link} className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white px-8 py-3.5 rounded-xl font-bold transition-colors shadow-sm hover:shadow-md text-center">
+                   <Link href={routeResult.link} className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white px-8 py-3.5 rounded-xl font-bold transition-colors shadow-sm hover:shadow-md text-center">
                      Rotayı İncele
                    </Link>
                    <button onClick={handleReset} className="w-full sm:w-auto flex items-center justify-center gap-2 text-gray-500 hover:text-gray-900 px-6 py-3 font-medium transition-colors">
@@ -203,7 +205,6 @@ export function RouteWizard() {
              </div>
           </div>
         )}
-
       </div>
     </div>
   );
