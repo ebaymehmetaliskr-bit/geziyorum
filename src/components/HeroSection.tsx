@@ -1,9 +1,12 @@
-import { motion, AnimatePresence } from 'framer-motion';
+"use client";
+
+import { motion } from 'framer-motion';
 import { Search, MapPin, List } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 
 export function HeroSection({ heroImageUrl }: { heroImageUrl?: string }) {
   const defaultImage = "https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?auto=format&fit=crop&w=2000&q=80";
+  
   return (
     <div className="relative min-h-[80vh] md:min-h-screen flex text-center items-center justify-center overflow-hidden">
       {/* Background Image & Overlay */}
