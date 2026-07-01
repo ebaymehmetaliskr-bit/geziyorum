@@ -4,14 +4,14 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-// GÖRECELİ YOLLAR YERİNE NEXT.JS ALIAS (@/) YAPISI KULLANILDI
-import { HeroSection } from '@/components/HeroSection';
-import { RouteWizard } from '@/components/RouteWizard';
-import { DirectoryGrid } from '@/components/DirectoryGrid';
-import { TourListing } from '@/types';
-import { getToursFromWordPress, getBlogPostsFromWordPress, getSiteSettings } from '@/services/wp-api';
+// @/ (Alias) kullanımları Vercel derleme (Webpack) hatasını çözmek için ../ (göreceli yol) olarak güncellendi.
+import { HeroSection } from '../components/HeroSection';
+import { RouteWizard } from '../components/RouteWizard';
+import { DirectoryGrid } from '../components/DirectoryGrid';
+import { TourListing } from '../types';
+import { getToursFromWordPress, getBlogPostsFromWordPress, getSiteSettings } from '../services/wp-api';
 import { MapPin, ArrowRight, Mail } from 'lucide-react';
-import { LazyImage } from '@/components/LazyImage';
+import { LazyImage } from '../components/LazyImage';
 
 function HomeContent() {
   const router = useRouter();
