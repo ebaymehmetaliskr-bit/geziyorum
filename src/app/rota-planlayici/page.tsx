@@ -21,6 +21,7 @@ import { TourListing } from '@/types';
 import { SEO } from '@/components/SEO';
 
 export default function RoutePlannerPage() {
+  const [mounted, setMounted] = useState(false);
   const [routeItems, setRouteItems] = useState<TourListing[]>([]);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,7 +29,9 @@ export default function RoutePlannerPage() {
   const [loading, setLoading] = useState(true);
   const [activeDayTab, setActiveDayTab] = useState<number>(1);
 
+  // Tarayıcı bağımlı yapıları korumak için montaj kontrolü
   useEffect(() => {
+    setMounted(true);
     getToursFromWordPress().then(data => {
       setTours(data);
       if (data.length > 1) {
@@ -39,6 +42,14 @@ export default function RoutePlannerPage() {
       setLoading(false);
     });
   }, []);
+
+  if (!mounted) {
+    return (
+      <div className="pt-32 text-center text-xs font-bold text-slate-400 animate-pulse">
+        Planlayıcı Yükleniyor...
+      </div>
+    );
+  }
 
   const availableTours = tours
     .filter(t => !routeItems.find(r => r.id === t.id))
@@ -82,7 +93,6 @@ export default function RoutePlannerPage() {
       <SEO id="page_planner" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Üst Başlık & Dünya Standartlarında Aksiyon Barı */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-slate-200/60 pb-6">
           <div>
             <div className="flex items-center gap-2 text-orange-600 font-bold text-xs uppercase tracking-widest mb-1">
@@ -104,11 +114,7 @@ export default function RoutePlannerPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Sol Kolon: İnteraktif Zaman Çizelgesi ve Duraklar */}
           <div className="lg:col-span-2 flex flex-col gap-6">
-            
-            {/* Küresel Özet Kartı */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -132,7 +138,6 @@ export default function RoutePlannerPage() {
                 </div>
               </div>
 
-              {/* Gün Sekmeleri (Wanderlog Tarzı Gün Bazlı İnceleme) */}
               {totalDays > 0 && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 border-b border-slate-100 scrollbar-hide">
                   {Array.from({ length: Math.max(totalDays, 1) }).map((_, idx) => (
@@ -236,7 +241,6 @@ export default function RoutePlannerPage() {
             )}
           </div>
 
-          {/* Sağ Kolon: Gelişmiş Nokta Arama / Keşif Motoru */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 flex flex-col h-[calc(100vh-14rem)] sticky top-24">
             <h2 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
                Keşif & Nokta Ekleme
@@ -290,9 +294,7 @@ export default function RoutePlannerPage() {
               )}
             </div>
           </div>
-
         </div>
-
       </div>
     </div>
   );
