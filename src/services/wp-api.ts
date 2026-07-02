@@ -1,10 +1,9 @@
 import { TourListing } from '../types';
 import { TOUR_LISTINGS } from '../data';
 
-// Always use the local proxy to avoid CORS issues.
-// The proxy in server.ts handles routing to VITE_WP_API_URL.
-const WP_URL = '/api/wp';
-const WP_API_BASE = WP_URL;
+// Next.js entegrasyonu için WordPress API base adresini doğrudan canlı sunucuna bağlıyoruz.
+const WP_LIVE_URL = 'https://www.geziyorumturkiye.com';
+const WP_API_BASE = `${WP_LIVE_URL}/wp-json/wp/v2`;
 
 export interface SiteSettings {
   name: string;
@@ -26,27 +25,49 @@ export interface SiteSettings {
   hero_image_url?: string;
 }
 
+// Sunucu taraflı derlemede DOMParser olmadığı için güvenli HTML Entity çözücü
+export const decodeHtmlEntities = (text: string): string => {
+  if (!text) return '';
+  if (typeof window === 'undefined') {
+    // Sunucu tarafında (SSR) regex ile basit temizlik
+    return text
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'");
+  }
+  try {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    return doc.documentElement.textContent || text;
+  } catch (e) {
+    return text;
+  }
+};
+
 export async function getSiteSettings(): Promise<SiteSettings | null> {
   let localSettings: Partial<SiteSettings> = {};
   try {
-    const saved = localStorage.getItem('geziyorum_settings');
-    if (saved) {
-      localSettings = JSON.parse(saved);
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('geziyorum_settings');
+      if (saved) {
+        localSettings = JSON.parse(saved);
+      }
     }
   } catch (e) {}
 
   const defaults = {
     top_links: [
-        { title: 'Destinasyonlar', url: '/destinasyon/ege-bolgesi' },
-        { title: 'Rota Planla', url: '/rota-planlayici' },
-        { title: 'Blog', url: '/blog' }
+      { title: 'Destinasyonlar', url: '/destinasyon/ege-bolgesi' },
+      { title: 'Rota Planla', url: '/rota-planlayici' },
+      { title: 'Blog', url: '/blog' }
     ],
     footer_links: [
-        { title: 'Ege Kıyıları', url: '/destinasyon/ege-bolgesi' },
-        { title: 'Akdeniz Rotaları', url: '/destinasyon/akdeniz' },
-        { title: 'Kapadokya Turu', url: '/destinasyon/kapadokya' },
-        { title: 'Gezi Rehberleri', url: '/blog' },
-        { title: 'Konaklama Tavsiyeleri', url: '/blog' }
+      { title: 'Ege Kıyıları', url: '/destinasyon/ege-bolgesi' },
+      { title: 'Akdeniz Rotaları', url: '/destinasyon/akdeniz' },
+      { title: 'Kapadokya Turu', url: '/destinasyon/kapadokya' },
+      { title: 'Gezi Rehberleri', url: '/blog' },
+      { title: 'Konaklama Tavsiyeleri', url: '/blog' }
     ],
     footer_text: 'Doğu\'dan Batı\'ya Türkiye\'nin gizli kalmış cennetlerini ve en popüler seyahat rotalarını keşfedin.',
     site_logo_url: 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=100&h=100&fit=crop',
@@ -66,9 +87,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
   };
 
   try {
-    // Use the proxy for the base wp-json as well if needed, or reconstruct
-    const baseWpJsonUrl = WP_URL === '/api/wp' ? '/api/wp_base' : `${WP_URL}/wp-json/`;
-    const response = await fetch(baseWpJsonUrl);
+    const response = await fetch(`${WP_LIVE_URL}/wp-json/`);
     if (!response.ok) {
        return {
          name: localSettings.name || 'Geziyorum',
@@ -174,7 +193,6 @@ export async function getToursFromWordPress(page: number = 1): Promise<TourListi
     const wpTours = await response.json();
 
     return wpTours.map((tour: any) => {
-      // İçerikteki HTML taglerini temizliyoruz
       const cleanDescription = tour.excerpt?.rendered 
         ? tour.excerpt.rendered.replace(/(<([^>]+)>)/gi, "").substring(0, 150) + "..." 
         : tour.content?.rendered?.replace(/(<([^>]+)>)/gi, "").substring(0, 150) + "...";
@@ -184,7 +202,6 @@ export async function getToursFromWordPress(page: number = 1): Promise<TourListi
       const wpTerms = tour._embedded?.['wp:term'];
       let categories: string[] = ["Bilinmeyen Kategori"];
       if (wpTerms && Array.isArray(wpTerms)) {
-        // Flatten all terms and filter the categories
         const allTerms = wpTerms.flat();
         const categoryTerms = allTerms.filter((term: any) => term.taxonomy === 'category' || term.taxonomy === 'post_tag' || term.taxonomy === 'tour_category');
         if (categoryTerms.length > 0) {
@@ -214,7 +231,7 @@ export async function getToursFromWordPress(page: number = 1): Promise<TourListi
         display_price: tour.tour_price || "Fiyat Belirtilmemiş",
         duration_days: tour.tour_duration || acf.duration_days || "Süre Belirtilmemiş", 
         rating: parseFloat(acf.rating) || 5.0,
-        featured_image: tour._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524231757912-21f4fe3a0837?auto=format&fit=crop&w=800&q=80',
+        featured_image: tour._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524230659092-07f99a75c013?w=800&q=80',
         gallery_images: [],
         affiliate_link: tour.tour_affiliate_link || acf.affiliate_link || ''
       } as TourListing;
@@ -226,37 +243,10 @@ export async function getToursFromWordPress(page: number = 1): Promise<TourListi
   }
 }
 
-export interface BlogPost {
-  id: number;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  date: string;
-  categoryName: string;
-  categorySlug: string;
-  img: string;
-}
-
-// HTML Entity Decoder using DOMParser for safe and complete decoding
-export const decodeHtmlEntities = (text: string): string => {
-  if (!text) return '';
-  try {
-    const doc = new DOMParser().parseFromString(text, 'text/html');
-    return doc.documentElement.textContent || text;
-  } catch (e) {
-    return text;
-  }
-};
-
 export async function getBlogPostsFromWordPress(perPage = 10, categorySlug = ''): Promise<BlogPost[]> {
   try {
     let url = `${WP_API_BASE}/posts?_embed&per_page=${perPage}`;
     if (categorySlug) {
-      // Bu adımda categorySlug'dan category ID'sini bulmamız gerekebilir.
-      // Basitleştirmek adına categoySlug'i filtrelemek için fetch yaptıktan sonra da yapabiliriz.
-      // WordPress API default haliyle slug üzerinden post filtresini doğrudan desteklemez. (Taxonomy sorgusu gerekir)
-      // Biz şimdilik hepsini çekip JavaScript tarafında filtreleyelim mock amaçlı veya WordPress category araması kullanalım:
        const catRes = await fetch(`${WP_API_BASE}/categories?slug=${categorySlug}`);
        if (catRes.ok) {
          const cats = await catRes.json();
@@ -322,7 +312,6 @@ export async function getBlogPostBySlugFromWordPress(slug: string): Promise<Blog
 }
 
 export async function getTourByIdFromWordPress(id: string): Promise<TourListing | null> {
-
   try {
     const response = await fetch(`${WP_API_BASE}/tours/${id}?_embed`, {
       method: 'GET',
@@ -377,7 +366,7 @@ export async function getTourByIdFromWordPress(id: string): Promise<TourListing 
       display_price: tour.tour_price || "Fiyat Belirtilmemiş",
       duration_days: tour.tour_duration || acf.duration_days || "Süre Belirtilmemiş", 
       rating: parseFloat(acf.rating) || 5.0,
-      featured_image: tour._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524231757912-21f4fe3a0837?auto=format&fit=crop&w=800&q=80',
+      featured_image: tour._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://images.unsplash.com/photo-1524230757912-21f4fe3a0837?auto=format&fit=crop&w=800&q=80',
       gallery_images: [],
       affiliate_link: tour.tour_affiliate_link || acf.affiliate_link || ''
     } as TourListing;
@@ -388,4 +377,3 @@ export async function getTourByIdFromWordPress(id: string): Promise<TourListing 
     return mockTour || null;
   }
 }
-

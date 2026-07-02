@@ -10,24 +10,28 @@ import { getToursFromWordPress } from '@/services/wp-api';
 import { TourListing } from '@/types';
 import { SEO } from '@/components/SEO';
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+// Leaflet default ikon kırılmasını engelleme
+if (typeof window !== 'undefined') {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  });
+}
 
-const customIcon = new L.Icon({
+const customIcon = typeof window !== 'undefined' ? new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
-});
+}) : null;
 
 const TourMarker: React.FC<{ tour: TourListing }> = ({ tour }) => {
-  if (!tour.coordinates) return null;
+  // Veri güvenliği: Koordinat veya lokasyon eksikse marker'ı çizme
+  if (!tour || !tour.coordinates || !customIcon) return null;
 
   return (
     <Marker position={[tour.coordinates.lat, tour.coordinates.lng]} icon={customIcon}>
@@ -36,13 +40,13 @@ const TourMarker: React.FC<{ tour: TourListing }> = ({ tour }) => {
           <div className="h-32 w-full relative rounded-t-lg overflow-hidden mb-3">
             <img src={tour.featured_image} alt={tour.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             <div className="absolute top-2 right-2 bg-white text-gray-900 px-2 py-0.5 rounded text-xs font-bold shadow-sm">
-              ₺{tour.price_try}
+              ₺{tour.price_try?.toLocaleString('tr-TR')}
             </div>
           </div>
           <div className="px-3">
             <div className="flex items-center gap-1 text-xs font-medium text-orange-500 mb-1">
               <MapPin className="w-3 h-3" />
-              {tour.location.province}, {tour.location.district}
+              {tour.location?.province || 'Bilinmiyor'}, {tour.location?.district || ''}
             </div>
             <h3 className="font-bold text-gray-900 text-sm mb-3 line-clamp-2">{tour.title}</h3>
             <Link href={`/tour/${tour.id}`} className="block w-full text-center bg-gray-900 text-white text-xs font-bold py-2 rounded-lg hover:bg-gray-800 transition-colors">
@@ -65,7 +69,11 @@ export default function MapComponent() {
 
   useEffect(() => {
     getToursFromWordPress().then((data) => {
-      setTours(data);
+      // API'den null/undefined gelme durumuna karşı dizi güvencesi
+      setTours(Array.isArray(data) ? data : []);
+      setLoading(false);
+    }).catch(() => {
+      setTours([]);
       setLoading(false);
     });
   }, []);
@@ -92,22 +100,23 @@ export default function MapComponent() {
     );
   };
 
+  // Veri Güvenliği Kontrolü Eklenen Rota Çizgisi Hesaplaması
   const routePositions = React.useMemo(() => {
-    if (!showRoute) return [];
+    if (!showRoute || !Array.isArray(tours) || tours.length === 0) return [];
     return [...tours]
-      .filter(t => t.coordinates)
-      .sort((a, b) => a.coordinates!.lng - b.coordinates!.lng)
+      .filter(t => t && t.coordinates && typeof t.coordinates.lat === 'number' && typeof t.coordinates.lng === 'number')
+      .sort((a, b) => (a.coordinates?.lng || 0) - (b.coordinates?.lng || 0))
       .map(t => [t.coordinates!.lat, t.coordinates!.lng] as [number, number]);
   }, [tours, showRoute]);
 
-  const userIcon = new L.Icon({
+  const userIcon = typeof window !== 'undefined' ? new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
     shadowSize: [41, 41]
-  });
+  }) : null;
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] relative">
@@ -133,16 +142,37 @@ export default function MapComponent() {
       </div>
       
       <div className="flex-1 w-full bg-gray-100 relative z-0">
-        <MapContainer center={[39.0, 35.0]} zoom={6} style={{ height: '100%', width: '100%' }} zoomControl={true} ref={setMap}>
-          <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {showRoute && routePositions.length > 1 && <Polyline positions={routePositions} pathOptions={{ color: '#f97316', weight: 4, opacity: 0.8, dashArray: '10, 10' }} />}
-          {tours.map((tour) => <TourMarker key={tour.id} tour={tour} />)}
-          {userLocation && (
-            <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
-              <Popup closeButton={false} className="custom-popup"><div className="p-3 text-center"><div className="font-bold text-gray-900 text-sm">Sizin Konumunuz</div></div></Popup>
-            </Marker>
-          )}
-        </MapContainer>
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-[500]">
+            <div className="flex flex-col items-center">
+              <Compass className="w-8 h-8 text-orange-500 animate-spin" />
+              <span className="mt-4 text-sm font-bold text-gray-900 uppercase tracking-widest">Harita Yükleniyor...</span>
+            </div>
+          </div>
+        ) : (
+          <MapContainer center={[39.0, 35.0]} zoom={6} style={{ height: '100%', width: '100%' }} zoomControl={true} ref={setMap}>
+            <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            
+            {showRoute && routePositions.length > 1 && (
+              <Polyline positions={routePositions} pathOptions={{ color: '#f97316', weight: 4, opacity: 0.8, dashArray: '10, 10' }} />
+            )}
+            
+            {/* Güvenli Döngü Kontrolü */}
+            {Array.isArray(tours) && tours.map((tour) => (
+              tour && tour.coordinates && <TourMarker key={tour.id} tour={tour} />
+            ))}
+
+            {userLocation && userIcon && (
+              <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
+                <Popup closeButton={false} className="custom-popup">
+                  <div className="p-3 text-center">
+                    <div className="font-bold text-gray-900 text-sm">Sizin Konumunuz</div>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+          </MapContainer>
+        )}
       </div>
     </div>
   );
